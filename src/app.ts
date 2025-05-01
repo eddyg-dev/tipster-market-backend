@@ -4,6 +4,7 @@ import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger";
 import matchRoutes from "./routes/match-routes";
 import oddsApiRoutes from "./routes/odds-api-routes";
+import predictionRoutes from "./routes/prediction-routes";
 
 const app = express();
 
@@ -13,6 +14,7 @@ app.use(express.json());
 
 // Routes
 app.use("/api/matches", matchRoutes);
+app.use("/api/predictions", predictionRoutes);
 app.use("/api/odds", oddsApiRoutes);
 
 // Documentation Swagger

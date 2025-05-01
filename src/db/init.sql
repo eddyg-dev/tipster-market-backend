@@ -1,8 +1,22 @@
+-- Drop existing tables and types
+drop table if exists predictions cascade;
+drop table if exists odds cascade;
+drop table if exists matches cascade;
+drop type if exists prediction_result cascade;
+drop type if exists prediction_status cascade;
+drop type if exists odd_type cascade;
+
 -- Enable UUID extension
 create extension if not exists "uuid-ossp";
 
 -- Create enum for odd types
 create type odd_type as enum ('result', 'spreads');
+
+-- Create enum for prediction status
+create type prediction_status as enum ('on_sale', 'closed', 'completed', 'cancelled');
+
+-- Create enum for prediction result
+create type prediction_result as enum ('pending', 'won', 'lost', 'void');
 
 -- Create matches table
 create table matches (
@@ -25,10 +39,24 @@ create table odds (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- Create predictions table
+create table predictions (
+  id uuid default uuid_generate_v4() primary key,
+  match_id uuid references matches(id) on delete cascade not null,
+  selected_outcomes jsonb not null,
+  amount numeric not null,
+  price numeric not null,
+  sale_deadline timestamp with time zone not null,
+  status prediction_status default 'on_sale' not null,
+  result prediction_result default 'pending' not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
 -- Create indexes
 create index idx_matches_date on matches(date);
 create index idx_matches_sport_key on matches(sport_key);
 create index idx_odds_match_id on odds(match_id);
+create index idx_predictions_match_id on predictions(match_id);
 
 -- Insert sample data for Ligue 1
 insert into matches (home_team, away_team, date, sport_key) values
