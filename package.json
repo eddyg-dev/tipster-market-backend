@@ -2,10 +2,10 @@
   "name": "tipster-market-backend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/server.js",
   "scripts": {
-    "start": "node dist/index.js",
-    "dev": "nodemon src/index.ts",
+    "start": "node dist/server.js",
+    "dev": "nodemon src/server.ts",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -14,11 +14,19 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@supabase/supabase-js": "^2.49.4"
+    "@supabase/supabase-js": "^2.49.4",
+    "@types/cors": "^2.8.17",
+    "cors": "^2.8.5",
+    "node-cron": "^3.0.3",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.1",
     "@types/node": "^22.15.3",
+    "@types/node-cron": "^3.0.11",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "nodemon": "^3.1.10",
