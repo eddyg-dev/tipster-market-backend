@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { oddsApiMatchesMock } from "../data/mocks/odds-api/matches.mock";
+import { frenchMatchesMock } from "../data/mocks/odds-api/matches.mock";
 import { oddsApiSportsMock } from "../data/mocks/odds-api/sports.mock";
 import { MatchResponse } from "../data/models/match-response.model";
 import { SportResponse } from "../data/models/sport-response.model";
@@ -57,7 +57,7 @@ export class OddsApiService {
       // const data = await response.json();
       // console.log("data", data);
       // return data;
-      return oddsApiMatchesMock;
+      return frenchMatchesMock;
     } catch (error) {
       console.error("Erreur lors de la récupération des matchs:", error);
       throw error;
@@ -84,7 +84,7 @@ export class OddsApiService {
       //   throw new Error(`HTTP error! status: ${response.status}`);
       // }
       // return await response.json();
-      return oddsApiMatchesMock[0];
+      return frenchMatchesMock[0];
     } catch (error) {
       console.error("Erreur lors de la récupération des cotes:", error);
       throw error;

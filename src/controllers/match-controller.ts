@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import { supabase } from "../config/supabase";
-import { oddsApiMatchesMock } from "../data/mocks/odds-api/matches.mock";
+import {
+  englishMatchesMock,
+  frenchMatchesMock,
+} from "../data/mocks/odds-api/matches.mock";
 
 export class MatchController {
   /**
@@ -43,7 +46,7 @@ export class MatchController {
         })
       );
 
-      res.json(oddsApiMatchesMock);
+      res.json(frenchMatchesMock.concat(englishMatchesMock));
     } catch (error) {
       console.error("Erreur lors de la récupération des matches:", error);
       res.status(500).json({ error: "Erreur serveur" });
