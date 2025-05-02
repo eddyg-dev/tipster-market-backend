@@ -47,6 +47,8 @@ router.post("/", PredictionController.createPrediction);
  *       500:
  *         description: Erreur serveur
  */
-router.get("/", (req, res) => PredictionController.getPredictions(req, res));
+router.get("/", (req, res) =>
+  PredictionController.getPredictionsWithMatchsDetails(req, res)
+);
 
 export default router;

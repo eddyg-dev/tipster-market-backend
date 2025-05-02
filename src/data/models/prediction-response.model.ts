@@ -13,6 +13,7 @@ export interface PredictionResponse {
     match_id: string;
     name: string;
     type: string;
+    match?: MatchDetails;
   }[];
   amount: number;
   price: number;

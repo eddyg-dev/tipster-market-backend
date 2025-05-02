@@ -42,7 +42,6 @@ create table odds (
 -- Create predictions table
 create table predictions (
   id uuid default uuid_generate_v4() primary key,
-  match_id uuid references matches(id) on delete cascade not null,
   selected_outcomes jsonb not null,
   amount numeric not null,
   price numeric not null,
@@ -56,7 +55,6 @@ create table predictions (
 create index idx_matches_date on matches(date);
 create index idx_matches_sport_key on matches(sport_key);
 create index idx_odds_match_id on odds(match_id);
-create index idx_predictions_match_id on predictions(match_id);
 
 -- Insert sample data for Ligue 1
 insert into matches (home_team, away_team, date, sport_key) values

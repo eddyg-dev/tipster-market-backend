@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import { supabase } from "../config/supabase";
-import { PredictionResponse } from "../data/models/prediction-response.model";
+import {
+  MatchDetails,
+  PredictionResponse,
+} from "../data/models/prediction-response.model";
 
 export class PredictionController {
   /**
@@ -39,7 +42,10 @@ export class PredictionController {
     res.status(200).json(data);
   }
 
-  static async getPredictions(req: Request, res: Response): Promise<void> {
+  static async getPredictionsWithMatchsDetails(
+    req: Request,
+    res: Response
+  ): Promise<void> {
     // Récupérer toutes les prédictions
     const { data: predictions, error: predictionsError } = await supabase
       .from("predictions")
@@ -51,24 +57,27 @@ export class PredictionController {
       return;
     }
 
-    // Extraire tous les match_ids uniques des selected_outcomes
-    const matchIds = predictions.reduce((ids: string[], prediction) => {
-      const outcomes = prediction.selected_outcomes as { matchId: string }[];
-      return [...ids, ...outcomes.map((outcome) => outcome.matchId)];
-    }, []);
+    console.log(predictions);
 
-    // Récupérer les détails des matches
-    const { data: matches, error: matchesError } = await supabase
-      .from("matches")
-      .select("*")
-      .in("id", matchIds);
-
-    if (matchesError) {
-      console.error("Erreur Supabase:", matchesError);
-      res.status(500).json({ error: matchesError.message });
-      return;
+    for (const prediction of predictions) {
+      for (const outcome of prediction.selected_outcomes) {
+        // const match = await this.getMatch(outcome.match.id);
+        const match = await this.getMatch(
+          "3ab8fda6-81e2-4a18-88a7-214b51f7ae95"
+        );
+        outcome.match = match;
+      }
     }
 
     res.status(200).json(predictions as PredictionResponse[]);
+  }
+
+  static async getMatch(id: string): Promise<MatchDetails | null> {
+    const { data } = await supabase
+      .from("matches")
+      .select("*")
+      .eq("id", id)
+      .single();
+    return data as MatchDetails | null;
   }
 }
