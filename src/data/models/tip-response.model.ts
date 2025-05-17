@@ -7,7 +7,7 @@ export interface MatchDetails {
   away_team: string;
 }
 
-export interface PredictionResponse {
+export interface TipResponse {
   id: string;
   selected_outcomes: {
     match_id: string;

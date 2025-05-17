@@ -1,11 +1,12 @@
 -- Drop existing tables and types
-drop table if exists predictions cascade;
+drop table if exists tips cascade;
 drop table if exists odds cascade;
 drop table if exists matches cascade;
 drop table if exists profiles cascade;
-drop type if exists prediction_result cascade;
-drop type if exists prediction_status cascade;
+drop type if exists tip_result cascade;
+drop type if exists tip_status cascade;
 drop type if exists odd_type cascade;
+drop type if exists profile_type cascade;
 
 -- Enable UUID extension
 create extension if not exists "uuid-ossp";
@@ -13,19 +14,26 @@ create extension if not exists "uuid-ossp";
 -- Create enum for odd types
 create type odd_type as enum ('result', 'spreads');
 
--- Create enum for prediction status
-create type prediction_status as enum ('on_sale', 'closed', 'completed', 'cancelled');
+-- Create enum for tip status
+create type tip_status as enum ('on_sale', 'closed', 'completed', 'cancelled');
 
--- Create enum for prediction result
-create type prediction_result as enum ('pending', 'won', 'lost', 'void');
+-- Create enum for tip result
+create type tip_result as enum ('pending', 'won', 'lost', 'void');
+
+-- Create enum for profile type
+create type profile_type as enum ('tipster', 'user');
 
 -- Create profiles table
 create table profiles (
   id uuid references auth.users on delete cascade primary key,
   username text,
+  birth_date date,
+  profile_type profile_type,
+  accept_terms boolean default false not null,
   avatar_url text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  profile_introduction_completed boolean default false not null
 );
 
 -- Create matches table
@@ -49,15 +57,15 @@ create table odds (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- Create predictions table
-create table predictions (
+-- Create tips table
+create table tips (
   id uuid default uuid_generate_v4() primary key,
   selected_outcomes jsonb not null,
   amount numeric not null,
   price numeric not null,
   sale_deadline timestamp with time zone not null,
-  status prediction_status default 'on_sale' not null,
-  result prediction_result default 'pending' not null,
+  status tip_status default 'on_sale' not null,
+  result tip_result default 'pending' not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
@@ -83,32 +91,3 @@ insert into odds (match_id, libelle, value, type) values
   ((select id from matches where home_team = 'Lyon' and away_team = 'Monaco'), 'Nul', 3.2, 'result'),
   ((select id from matches where home_team = 'Lyon' and away_team = 'Monaco'), 'Monaco', 1.8, 'result');
 
--- Create trigger for new user profiles
-create or replace function public.handle_new_user()
-returns trigger as $$
-begin
-  insert into public.profiles (id, username, avatar_url)
-  values (new.id, new.email, '');
-  return new;
-end;
-$$ language plpgsql security definer;
-
--- Attach trigger to auth.users
-create or replace trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute function public.handle_new_user();
-
--- Create RLS policies for profiles
-alter table profiles enable row level security;
-
-create policy "Les profils sont visibles par tous"
-  on profiles for select
-  using (true);
-
-create policy "Les utilisateurs peuvent mettre à jour leur propre profil"
-  on profiles for update
-  using (auth.uid() = id);
-
-create policy "Les utilisateurs peuvent créer leur propre profil"
-  on profiles for insert
-  with check (auth.uid() = id); 

@@ -1,5 +1,5 @@
 import express from "express";
-import { PredictionController } from "../controllers/prediction-controller";
+import { TipController } from "../controllers/tip-controller";
 
 const router = express.Router();
 
@@ -33,22 +33,20 @@ const router = express.Router();
  *       500:
  *         description: Erreur serveur
  */
-router.post("/", PredictionController.createPrediction);
+router.post("/", TipController.createTip);
 
 /**
  * @swagger
- * /api/predictions:
+ * /api/tips:
  *   get:
- *     summary: Récupère la liste des prédictions
- *     tags: [Predictions]
+ *     summary: Récupère la liste des pronostics
+ *     tags: [Tips]
  *     responses:
  *       200:
- *         description: Liste des prédictions récupérée avec succès
+ *         description: Liste des pronostics récupérée avec succès
  *       500:
  *         description: Erreur serveur
  */
-router.get("/", (req, res) =>
-  PredictionController.getPredictionsWithMatchsDetails(req, res)
-);
+router.get("/", (req, res) => TipController.getTipsWithMatchsDetails(req, res));
 
 export default router;
