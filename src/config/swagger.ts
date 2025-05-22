@@ -14,6 +14,36 @@ const options: swaggerJsdoc.Options = {
         description: "Serveur de développement",
       },
     ],
+    tags: [
+      {
+        name: "Tipsters",
+        description: "Gestion des tipsters",
+      },
+      {
+        name: "Profiles",
+        description: "Gestion des profils",
+      },
+      {
+        name: "Tips",
+        description: "Gestion des tips",
+      },
+      {
+        name: "Odds",
+        description: "Gestion des cotes",
+      },
+      {
+        name: "Matches",
+        description: "Gestion des matchs",
+      },
+      {
+        name: "Users",
+        description: "Gestion des utilisateurs",
+      },
+      {
+        name: "Bookmakers",
+        description: "Gestion des bookmakers",
+      },
+    ],
   },
   apis: ["./src/routes/*.ts"], // Chemin vers les fichiers de routes
 };
