@@ -4,7 +4,7 @@ import { MatchDetails, TipResponse } from "../data/models/tip-response.model";
 
 export class TipController {
   /**
-   * Crée une nouvelle prédiction
+   * Crée un nouveau pronostic
    */
   static async createTip(req: Request, res: Response): Promise<void> {
     console.log("Corps de la requête:", req.body);
@@ -43,7 +43,7 @@ export class TipController {
     req: Request,
     res: Response
   ): Promise<void> {
-    // Récupérer toutes les prédictions
+    // Récupérer tous les pronostics
     const { data: tips, error: tipsError } = await supabase
       .from("tips")
       .select("*");

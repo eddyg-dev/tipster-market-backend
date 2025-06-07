@@ -10,4 +10,10 @@ const router = express.Router();
  */
 router.get("/", TipsterController.getAllTipsters);
 
+/**
+ * @route GET /api/tipsters/:id
+ * @desc Récupère un tipster par son ID
+ * @access Public
+ */
+router.get("/:id", TipsterController.getTipsterById);
 export default router;

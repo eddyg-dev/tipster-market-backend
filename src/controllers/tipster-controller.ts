@@ -40,4 +40,21 @@ export class TipsterController {
       res.status(500).json({ error: "Erreur interne du serveur" });
     }
   }
+
+  static async getTipsterById(req: Request, res: Response): Promise<void> {
+    const { id } = req.params;
+    const { data: tipster, error } = await supabase
+      .from("tipsters")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) {
+      console.error("Erreur Supabase:", error);
+      res.status(500).json({ error: error.message });
+      return;
+    }
+
+    res.status(200).json(tipster as TipsterResponse);
+  }
 }

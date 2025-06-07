@@ -4,6 +4,7 @@ import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger";
 import matchRoutes from "./routes/match-routes";
 import oddsApiRoutes from "./routes/odds-api-routes";
+import profileRoutes from "./routes/profile-routes";
 import tipRoutes from "./routes/tip-routes";
 import tipsterRoutes from "./routes/tipster-routes";
 
@@ -17,7 +18,7 @@ app.use(express.json());
 app.use("/api/matches", matchRoutes);
 app.use("/api/tips", tipRoutes);
 app.use("/api/odds", oddsApiRoutes);
-// app.use("/api/profiles", profileRoutes);
+app.use("/api/profiles", profileRoutes);
 app.use("/api/tipsters", tipsterRoutes);
 
 // Documentation Swagger
