@@ -1,4 +1,4 @@
-export interface TipsterResponse {
+export interface Tipster {
   id: string;
   username: string;
   avatar_url: string | null;
