@@ -14,14 +14,20 @@ export class TipController {
       !req.body ||
       !req.body.selectedOutcomes ||
       !req.body.amount ||
-      !req.body.price ||
-      !req.body.tipsterId
+      !req.body.price
     ) {
       res.status(400).json({ error: "Données manquantes dans la requête" });
       return;
     }
 
-    const { selectedOutcomes, amount, price, analysis, tipsterId } = req.body;
+    // Récupérer l'ID utilisateur depuis le token JWT
+    const tipsterId = req.user?.id;
+    if (!tipsterId) {
+      res.status(401).json({ error: "Utilisateur non authentifié" });
+      return;
+    }
+
+    const { selectedOutcomes, amount, price, analysis } = req.body;
 
     try {
       // Utiliser le service de validation

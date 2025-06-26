@@ -2,6 +2,7 @@ import cors from "cors";
 import express from "express";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger";
+import { authMiddleware } from "./middleware/auth.middleware";
 import followerRoutes from "./routes/follower-routes";
 import matchRoutes from "./routes/match-routes";
 import oddsApiRoutes from "./routes/odds-api-routes";
@@ -18,7 +19,7 @@ app.use(express.json());
 
 // Routes
 app.use("/api/matches", matchRoutes);
-app.use("/api/tips", tipRoutes);
+app.use("/api/tips", authMiddleware, tipRoutes);
 app.use("/api/tip-purchases", tipPurchaseRoutes);
 app.use("/api/followers", followerRoutes);
 app.use("/api/odds", oddsApiRoutes);
