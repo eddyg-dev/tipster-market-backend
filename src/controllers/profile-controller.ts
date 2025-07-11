@@ -47,7 +47,6 @@ export class ProfileController {
             win_rate: stats.winRate,
             roi: stats.roi,
             tips_count: stats.totalTips,
-            followers_count: stats.followersCount,
             total_earnings: stats.totalEarnings,
           } as any;
         })
@@ -77,14 +76,18 @@ export class ProfileController {
         .select("*")
         .eq("id", id)
         .single();
+      if (data?.profile_type === "tipster") {
+        const stats = await StatsService.calculateTipsterStats(id);
+        data.win_rate = stats.winRate;
+        data.roi = stats.roi.toFixed(2);
+        data.tips_count = stats.totalTips;
+        data.total_earnings = stats.totalEarnings.toFixed(2);
+      }
 
       if (error) {
         res.status(404).json({ error: "Profil non trouvé" });
         return;
       }
-
-      console.log("Profile data from DB:", data);
-      console.log("Avatar URL from DB:", data.avatar_url);
 
       res.status(200).json(data as ProfileResponse);
     } catch (error) {
@@ -97,9 +100,6 @@ export class ProfileController {
     req: Request,
     res: Response
   ): Promise<void> {
-    console.log("Corps de la requête:", req.body);
-    console.log("ID:", req.params.id);
-
     if (
       !req.body ||
       !req.body.username ||

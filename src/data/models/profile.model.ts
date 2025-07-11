@@ -24,7 +24,6 @@ export interface TipsterStats {
   win_rate: number;
   roi: number;
   rank: number;
-  followers_count: number;
   tips_count: number;
   active_tips_count: number;
   status: string;

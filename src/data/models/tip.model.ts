@@ -15,6 +15,7 @@ export interface Tip {
     type: string;
     match?: MatchDetails;
   }[];
+  selected_outcomes_count: number;
   amount: number;
   price: number;
   sale_deadline: string;

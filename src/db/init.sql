@@ -1,6 +1,5 @@
 -- Drop existing tables and types
 drop table if exists tip_purchases cascade;
-drop table if exists followers cascade;
 drop table if exists tips cascade;
 drop table if exists odds cascade;
 drop table if exists matches cascade;
@@ -18,7 +17,7 @@ create extension if not exists "uuid-ossp";
 create type odd_type as enum ('h2h', 'spreads');
 
 -- Create enum for tip status
-create type tip_status as enum ('on_sale', 'closed', 'completed', 'cancelled');
+create type tip_status as enum ('on_sale', 'completed', 'cancelled');
 
 -- Create enum for tip result
 create type tip_result as enum ('pending', 'won', 'lost', 'void');
@@ -83,15 +82,6 @@ create table tip_purchases (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- Create followers table
-create table followers (
-  id uuid default uuid_generate_v4() primary key,
-  follower_id uuid references profiles(id) on delete cascade not null,
-  tipster_id uuid references profiles(id) on delete cascade not null,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  -- Contrainte unique pour éviter les doublons
-  unique(follower_id, tipster_id)
-);
 
 -- Create indexes
 create index idx_matches_date on matches(date);
@@ -102,8 +92,6 @@ create index idx_profiles_username on profiles(username);
 create index idx_profiles_type on profiles(profile_type);
 create index idx_tip_purchases_tip_id on tip_purchases(tip_id);
 create index idx_tip_purchases_buyer_id on tip_purchases(buyer_id);
-create index idx_followers_follower_id on followers(follower_id);
-create index idx_followers_tipster_id on followers(tipster_id);
 
 -- Create function to update updated_at timestamp
 create or replace function update_updated_at_column()

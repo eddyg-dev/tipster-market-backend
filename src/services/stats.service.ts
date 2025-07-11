@@ -4,7 +4,6 @@ export interface TipsterStats {
   winRate: number;
   roi: number;
   totalTips: number;
-  followersCount: number;
   totalEarnings: number;
 }
 
@@ -22,15 +21,6 @@ export class StatsService {
 
       if (tipsError) throw tipsError;
 
-      // Récupérer le nombre de followers
-      const { count: followersCount, error: followersError } = await supabase
-        .from("followers")
-        .select("*", { count: "exact", head: true })
-        .eq("tipster_id", tipsterId);
-
-      if (followersError) throw followersError;
-
-      // Calculer les statistiques
       const completedTips = tips.filter((tip) => tip.result !== "pending");
       const wonTips = completedTips.filter((tip) => tip.result === "won");
       const totalTips = completedTips.length;
@@ -64,7 +54,6 @@ export class StatsService {
         winRate: Math.round(winRate * 100) / 100,
         roi: Math.round(roi * 100) / 100,
         totalTips,
-        followersCount: followersCount || 0,
         totalEarnings: Math.round(totalEarnings * 100) / 100,
       };
     } catch (error) {
@@ -73,7 +62,6 @@ export class StatsService {
         winRate: 0,
         roi: 0,
         totalTips: 0,
-        followersCount: 0,
         totalEarnings: 0,
       };
     }

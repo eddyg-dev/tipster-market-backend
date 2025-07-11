@@ -30,8 +30,6 @@ const router = express.Router();
  *                     type: number
  *                   tips_count:
  *                     type: number
- *                   followers_count:
- *                     type: number
  *                   rank:
  *                     type: number
  *       500:
@@ -53,20 +51,6 @@ router.get("/tipsters", ProfileController.getTipsters);
  *             type: object
  */
 router.post("/:id/introduction", ProfileController.saveProfileIntroduction);
-
-/**
- * @swagger
- * /api/profiles:
- *   get:
- *     summary: Récupère tous les profils
- *     tags: [Profiles]
- *     responses:
- *       200:
- *         description: Liste des profils récupérée avec succès
- *       500:
- *         description: Erreur serveur
- */
-router.get("/", ProfileController.getProfiles);
 
 /**
  * @swagger

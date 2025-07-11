@@ -6,7 +6,7 @@ const options: swaggerJsdoc.Options = {
     info: {
       title: "Tipster Market API",
       version: "1.0.0",
-      description: "API pour la gestion des paris sportifs et des cotes",
+      description: "API pour la gestion des pronostics sportifs",
     },
     servers: [
       {
@@ -35,9 +35,13 @@ const options: swaggerJsdoc.Options = {
         name: "Matches",
         description: "Gestion des matchs",
       },
+      {
+        name: "Tip Purchases",
+        description: "Gestion des achats de tips",
+      },
     ],
   },
-  apis: ["./src/routes/*.ts"], // Chemin vers les fichiers de routes
+  apis: ["./src/routes/*.ts"],
 };
 
 export const swaggerSpec = swaggerJsdoc(options);
