@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { supabase } from "../config/supabase";
 import { ProfileResponse } from "../data/models/profile.model";
-import { StatsService } from "../services/stats.service";
+import { TipsterService } from "../services/tipster.service";
 
 export class ProfileController {
   static async getProfiles(req: Request, res: Response): Promise<void> {
@@ -41,23 +41,16 @@ export class ProfileController {
       // Calculer les statistiques pour chaque tipster
       const tipstersWithStats = await Promise.all(
         tipsters.map(async (tipster) => {
-          const stats = await StatsService.calculateTipsterStats(tipster.id);
-          return {
-            ...tipster,
-            win_rate: stats.winRate,
-            roi: stats.roi,
-            tips_count: stats.totalTips,
-            total_earnings: stats.totalEarnings,
-          } as any;
+          return await TipsterService.buildTipsterWithDetails(tipster);
         })
       );
 
       // Trier par ROI décroissant
-      tipstersWithStats.sort((a, b) => b.roi - a.roi);
+      tipstersWithStats.sort((a: any, b: any) => b.stats.roi - a.stats.roi);
 
       // Ajouter le rank basé sur le tri
-      tipstersWithStats.forEach((tipster, index) => {
-        tipster.rank = index + 1;
+      tipstersWithStats.forEach((tipster: any, index: number) => {
+        tipster.stats.rank = index + 1;
       });
 
       res.status(200).json(tipstersWithStats);
@@ -76,16 +69,19 @@ export class ProfileController {
         .select("*")
         .eq("id", id)
         .single();
-      if (data?.profile_type === "tipster") {
-        const stats = await StatsService.calculateTipsterStats(id);
-        data.win_rate = stats.winRate;
-        data.roi = stats.roi.toFixed(2);
-        data.tips_count = stats.totalTips;
-        data.total_earnings = stats.totalEarnings.toFixed(2);
-      }
 
       if (error) {
         res.status(404).json({ error: "Profil non trouvé" });
+        return;
+      }
+
+      if (data?.profile_type === "tipster") {
+        // Utiliser le service Tipster pour construire le tipster avec ses détails
+        const tipsterData = await TipsterService.buildTipsterWithDetails(
+          data,
+          true
+        );
+        res.status(200).json(tipsterData);
         return;
       }
 
@@ -94,6 +90,16 @@ export class ProfileController {
       console.error("Erreur lors de la récupération du profil:", error);
       res.status(500).json({ error: "Erreur interne du serveur" });
     }
+  }
+
+  static async getTipsterById(req: Request, res: Response): Promise<void> {
+    const { id } = req.params;
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", id)
+      .single();
+    res.status(200).json(data as ProfileResponse);
   }
 
   static async saveProfileIntroduction(

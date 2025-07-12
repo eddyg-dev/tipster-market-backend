@@ -17,7 +17,9 @@ export interface ProfileIntroduction {
   acceptTerms: boolean;
 }
 
-export interface ProfileResponse extends Profile {}
+export interface ProfileResponse extends Profile {
+  tips?: any[]; // Tips optionnels pour les tipsters
+}
 
 // Interface pour les stats calculées des tipsters
 export interface TipsterStats {
