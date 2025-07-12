@@ -8,12 +8,25 @@ export class TipController {
    * Crée un nouveau pronostic
    */
   static async createTip(req: Request, res: Response): Promise<void> {
+    console.log("=== CREATE TIP REQUEST ===");
+    console.log("Headers:", req.headers);
+    console.log("Body:", req.body);
+    console.log("User:", req.user);
+
     if (
       !req.body ||
       !req.body.selectedOutcomes ||
       !req.body.amount ||
       !req.body.price
     ) {
+      console.log("Missing data validation failed:");
+      console.log("- req.body exists:", !!req.body);
+      console.log(
+        "- req.body.selectedOutcomes exists:",
+        !!req.body?.selectedOutcomes
+      );
+      console.log("- req.body.amount exists:", !!req.body?.amount);
+      console.log("- req.body.price exists:", !!req.body?.price);
       res.status(400).json({ error: "Données manquantes dans la requête" });
       return;
     }
