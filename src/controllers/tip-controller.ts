@@ -1,8 +1,6 @@
+import { Tip, TipResult, TipStatus } from "@tipster-market/shared-models";
 import { Request, Response } from "express";
 import { supabase } from "../config/supabase";
-import { TipResult } from "../data/enums/tip-result.enum";
-import { TipStatus } from "../data/enums/tip-status.enum";
-import { Tip } from "../data/models/tip.model";
 import { ValidationService } from "../services/validation.service";
 
 export class TipController {
@@ -79,8 +77,9 @@ export class TipController {
           ? tip.selected_outcomes.length
           : 0,
         selected_outcomes: [],
+        tipster: tip.tipster,
       })) || [];
 
-    res.status(200).json(transformedData as Tip[]);
+    res.status(200).json(transformedData as unknown as Tip[]);
   }
 }

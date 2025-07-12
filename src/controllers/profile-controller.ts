@@ -1,6 +1,6 @@
+import { Profile } from "@tipster-market/shared-models";
 import { Request, Response } from "express";
 import { supabase } from "../config/supabase";
-import { ProfileResponse } from "../data/models/profile.model";
 import { TipsterService } from "../services/tipster.service";
 
 export class ProfileController {
@@ -13,7 +13,7 @@ export class ProfileController {
         return;
       }
 
-      res.status(200).json(data as ProfileResponse[]);
+      res.status(200).json(data as Profile[]);
     } catch (error) {
       console.error("Erreur lors de la récupération des profils:", error);
       res.status(500).json({ error: "Erreur interne du serveur" });
@@ -85,7 +85,7 @@ export class ProfileController {
         return;
       }
 
-      res.status(200).json(data as ProfileResponse);
+      res.status(200).json(data as Profile);
     } catch (error) {
       console.error("Erreur lors de la récupération du profil:", error);
       res.status(500).json({ error: "Erreur interne du serveur" });
@@ -99,7 +99,7 @@ export class ProfileController {
       .select("*")
       .eq("id", id)
       .single();
-    res.status(200).json(data as ProfileResponse);
+    res.status(200).json(data as Profile);
   }
 
   static async saveProfileIntroduction(
@@ -139,7 +139,7 @@ export class ProfileController {
         return;
       }
 
-      res.status(200).json(data as ProfileResponse | null);
+      res.status(200).json(data as Profile | null);
     } catch (error) {
       console.error("Erreur lors de la sauvegarde:", error);
       res.status(500).json({ error: "Erreur interne du serveur" });

@@ -6,7 +6,7 @@ import { authMiddleware } from "./middleware/auth.middleware";
 import matchRoutes from "./routes/match-routes";
 import oddsApiRoutes from "./routes/odds-api-routes";
 import profileRoutes from "./routes/profile-routes";
-import tipPurchaseRoutes from "./routes/tip-purchase-routes";
+import purchaseRoutes from "./routes/purchase-routes";
 import tipRoutes from "./routes/tip-routes";
 
 const app = express();
@@ -18,7 +18,7 @@ app.use(express.json());
 // Routes
 app.use("/api/matches", matchRoutes);
 app.use("/api/tips", authMiddleware, tipRoutes);
-app.use("/api/tip-purchases", tipPurchaseRoutes);
+app.use("/api/purchases", purchaseRoutes);
 app.use("/api/odds", oddsApiRoutes);
 app.use("/api/profiles", profileRoutes);
 
