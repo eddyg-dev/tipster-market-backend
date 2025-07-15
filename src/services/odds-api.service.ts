@@ -48,16 +48,15 @@ export class OddsApiService {
     markets: string = "h2h"
   ): Promise<MatchResponse[]> {
     try {
-      // const url = `${ODDS_API_BASE_URL}/sports/${sportKey}/odds?apiKey=${ODDS_API_KEY}&regions=${regions}&markets=${markets}`;
-      // console.log("url", url);
-      // const response = await fetch(url);
-      // if (!response.ok) {
-      //   throw new Error(`HTTP error! status: ${response.status}`);
-      // }
-      // const data = await response.json();
-      // console.log("data", data);
-      // return data;
-      return frenchMatchesMock;
+      const url = `${ODDS_API_BASE_URL}/sports/${sportKey}/odds?apiKey=${ODDS_API_KEY}&regions=${regions}&markets=${markets}`;
+      console.log("url", url);
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log("data", data);
+      return data;
     } catch (error) {
       console.error("Erreur lors de la récupération des matchs:", error);
       throw error;

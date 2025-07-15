@@ -13,9 +13,6 @@ drop type if exists profile_type cascade;
 -- Enable UUID extension
 create extension if not exists "uuid-ossp";
 
--- Create enum for odd types
-create type odd_type as enum ('h2h', 'spreads');
-
 -- Create enum for tip status
 create type tip_status as enum ('on_sale', 'completed', 'cancelled');
 
@@ -41,21 +38,12 @@ create table profiles (
 -- Create matches table
 create table matches (
   id uuid default uuid_generate_v4() primary key,
+  match_id text unique,
   home_team text not null,
   away_team text not null,
-  date timestamp with time zone not null,
+  commence_time timestamp with time zone not null,
   sport_key text not null,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
--- Create odds table
-create table odds (
-  id uuid default uuid_generate_v4() primary key,
-  match_id uuid references matches(id) on delete cascade not null,
-  libelle text not null,
-  value numeric not null,
-  type odd_type not null,
-  selected boolean default false,
+  outcomes jsonb,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
@@ -82,11 +70,11 @@ create table tip_purchases (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
-
 -- Create indexes
-create index idx_matches_date on matches(date);
+create index idx_matches_commence_time on matches(commence_time);
 create index idx_matches_sport_key on matches(sport_key);
-create index idx_odds_match_id on odds(match_id);
+create index idx_matches_match_id on matches(match_id);
+create index idx_matches_outcomes on matches using gin(outcomes);
 create index idx_tips_tipster_id on tips(tipster_id);
 create index idx_profiles_username on profiles(username);
 create index idx_profiles_type on profiles(profile_type);
@@ -107,23 +95,6 @@ create trigger update_profiles_updated_at
   before update on profiles
   for each row
   execute function update_updated_at_column();
-
--- Insert sample data for Ligue 1
-insert into matches (home_team, away_team, date, sport_key) values
-  ('PSG', 'OM', now(), 'soccer_france_ligue_one'),
-  ('Lyon', 'Monaco', now() + interval '1 day', 'soccer_france_ligue_one');
-
--- Insert sample odds for PSG vs OM
-insert into odds (match_id, libelle, value, type) values
-  ((select id from matches where home_team = 'PSG' and away_team = 'OM'), 'PSG', 1.5, 'h2h'),
-  ((select id from matches where home_team = 'PSG' and away_team = 'OM'), 'Nul', 3.0, 'h2h'),
-  ((select id from matches where home_team = 'PSG' and away_team = 'OM'), 'OM', 2.0, 'h2h');
-
--- Insert sample odds for Lyon vs Monaco
-insert into odds (match_id, libelle, value, type) values
-  ((select id from matches where home_team = 'Lyon' and away_team = 'Monaco'), 'Lyon', 2.1, 'h2h'),
-  ((select id from matches where home_team = 'Lyon' and away_team = 'Monaco'), 'Nul', 3.2, 'h2h'),
-  ((select id from matches where home_team = 'Lyon' and away_team = 'Monaco'), 'Monaco', 1.8, 'h2h');
 
 -- Créer le trigger pour les nouveaux utilisateurs (insère dans profiles par défaut)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
