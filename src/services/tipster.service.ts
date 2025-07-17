@@ -1,5 +1,5 @@
+import { TipStatus } from "@tipster-market/shared-models";
 import { supabase } from "../config/supabase";
-import { TipStatus } from "../data/enums/tip-status.enum";
 import { StatsService } from "./stats.service";
 
 export class TipsterService {
@@ -38,7 +38,7 @@ export class TipsterService {
       );
       tipsterData.tips = tipsWithMatches;
       tipsterData.stats.active_tips_count = tipsWithMatches.filter(
-        (tip) => tip.status === TipStatus.ON_SALE
+        (tip) => tip.status === TipStatus.AVAILABLE
       ).length;
     }
 
@@ -59,7 +59,7 @@ export class TipsterService {
         selected_outcomes,
         amount,
         price,
-        sale_deadline,
+        deadline,
         status,
         result,
         created_at,

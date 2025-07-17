@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CheckResultsService, UpdateOddsService } from "../../services/jobs";
+import { UpdateOddsService } from "../../services/jobs";
 
 export class JobController {
   static async execute(req: Request, res: Response) {
@@ -11,9 +11,9 @@ export class JobController {
         case "update_odds":
           result = await UpdateOddsService.execute();
           break;
-        case "check_results":
-          result = await CheckResultsService.execute();
-          break;
+        // case "check_results":
+        //   result = await CheckResultsService.execute();
+        //   break;
         default:
           res.status(400).json({ success: false, message: "Job inconnu" });
           return;

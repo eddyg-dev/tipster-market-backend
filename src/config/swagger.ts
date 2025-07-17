@@ -35,10 +35,6 @@ const options: swaggerJsdoc.Options = {
         name: "Matches",
         description: "Gestion des matchs",
       },
-      {
-        name: "Tip Purchases",
-        description: "Gestion des achats de tips",
-      },
     ],
   },
   apis: ["./src/routes/*.ts"],

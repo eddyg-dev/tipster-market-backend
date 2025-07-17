@@ -1,4 +1,4 @@
-import { Tip, TipResult, TipStatus } from "@tipster-market/shared-models";
+import { Tip, TipStatus } from "@tipster-market/shared-models";
 import { Request, Response } from "express";
 import { supabase } from "../config/supabase";
 import { ValidationService } from "../services/validation.service";
@@ -52,9 +52,8 @@ export class TipController {
         amount,
         price,
         analysis,
-        sale_deadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24h par défaut
-        status: TipStatus.ON_SALE,
-        result: TipResult.PENDING,
+        deadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24h par défaut
+        status: TipStatus.AVAILABLE,
       });
 
       if (error) {
@@ -70,13 +69,12 @@ export class TipController {
     }
   }
 
-  static async getOnSaleTips(req: Request, res: Response): Promise<void> {
+  static async getTips(req: Request, res: Response): Promise<void> {
     const { data, error } = await supabase
       .from("tips")
       .select(
-        "id, tipster_id, selected_outcomes, amount, price, sale_deadline, status, result, created_at, tipster:tipster_id(*)"
+        "id, tipster_id, selected_outcomes, amount, price, deadline, status, created_at, tipster:tipster_id(*)"
       )
-      .eq("status", TipStatus.ON_SALE)
       .order("created_at", { ascending: false });
     if (error) {
       res.status(500).json({ error: error.message });
@@ -94,5 +92,19 @@ export class TipController {
       })) || [];
 
     res.status(200).json(transformedData as unknown as Tip[]);
+  }
+
+  static async getTip(req: Request, res: Response): Promise<void> {
+    const { id } = req.params;
+    const { data, error } = await supabase
+      .from("tips")
+      .select("* , tipster:tipster_id(*)")
+      .eq("id", id)
+      .single();
+    if (error) {
+      res.status(500).json({ error: error.message });
+      return;
+    }
+    res.status(200).json(data);
   }
 }

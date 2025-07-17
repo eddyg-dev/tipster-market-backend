@@ -1,25 +1,15 @@
 -- Drop existing tables and types
-drop table if exists tip_purchases cascade;
 drop table if exists tips cascade;
-drop table if exists odds cascade;
 drop table if exists matches cascade;
-drop table if exists tipsters cascade;
-drop table if exists users cascade;
-drop type if exists tip_result cascade;
+drop table if exists profiles cascade;
 drop type if exists tip_status cascade;
-drop type if exists odd_type cascade;
 drop type if exists profile_type cascade;
 
 -- Enable UUID extension
 create extension if not exists "uuid-ossp";
 
--- Create enum for tip status
-create type tip_status as enum ('on_sale', 'completed', 'cancelled');
-
--- Create enum for tip result
-create type tip_result as enum ('pending', 'won', 'lost', 'void');
-
--- Create enum for profile type
+-- Create enums for tip status and profile type
+create type tip_status as enum ('available', 'in_progress', 'won', 'lost', 'void', 'cancelled');
 create type profile_type as enum ('tipster', 'user');
 
 -- Create unified profiles table
@@ -55,20 +45,11 @@ create table tips (
   amount numeric not null,
   price numeric not null,
   analysis text,
-  sale_deadline timestamp with time zone not null,
-  status tip_status default 'on_sale' not null,
-  result tip_result default 'pending' not null,
+  deadline timestamp with time zone not null,
+  status tip_status default 'available' not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- Create tip_purchases table
-create table tip_purchases (
-  id uuid default uuid_generate_v4() primary key,
-  tip_id uuid references tips(id) on delete cascade not null,
-  buyer_id uuid references profiles(id) on delete cascade not null,
-  status text default 'completed' not null,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
 
 -- Create indexes
 create index idx_matches_commence_time on matches(commence_time);
@@ -78,8 +59,6 @@ create index idx_matches_outcomes on matches using gin(outcomes);
 create index idx_tips_tipster_id on tips(tipster_id);
 create index idx_profiles_username on profiles(username);
 create index idx_profiles_type on profiles(profile_type);
-create index idx_tip_purchases_tip_id on tip_purchases(tip_id);
-create index idx_tip_purchases_buyer_id on tip_purchases(buyer_id);
 
 -- Create function to update updated_at timestamp
 create or replace function update_updated_at_column()
