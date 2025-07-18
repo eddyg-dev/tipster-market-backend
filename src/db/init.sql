@@ -11,6 +11,7 @@ create extension if not exists "uuid-ossp";
 -- Create enums for tip status and profile type
 create type tip_status as enum ('available', 'in_progress', 'won', 'lost', 'void', 'cancelled');
 create type profile_type as enum ('tipster', 'user');
+create type subscription_level as enum ('free', 'premium', 'tipster');
 
 -- Create unified profiles table
 create table profiles (
@@ -21,6 +22,7 @@ create table profiles (
   accept_terms boolean default false,
   profile_introduction_completed boolean default false,
   avatar_url text,
+  subscription_level subscription_level not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -59,6 +61,7 @@ create index idx_matches_outcomes on matches using gin(outcomes);
 create index idx_tips_tipster_id on tips(tipster_id);
 create index idx_profiles_username on profiles(username);
 create index idx_profiles_type on profiles(profile_type);
+create index idx_profiles_subscription_level on profiles(subscription_level);
 
 -- Create function to update updated_at timestamp
 create or replace function update_updated_at_column()

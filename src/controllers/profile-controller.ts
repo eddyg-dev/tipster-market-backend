@@ -1,4 +1,10 @@
-import { Profile } from "@tipster-market/shared-models";
+import {
+  Profile,
+  ProfileType,
+  SubscriptionLevel,
+  Tipster,
+  User,
+} from "@tipster-market/shared-models";
 import { Request, Response } from "express";
 import { supabase } from "../config/supabase";
 import { TipsterService } from "../services/tipster.service";
@@ -12,7 +18,6 @@ export class ProfileController {
         res.status(500).json({ error: error.message });
         return;
       }
-
       res.status(200).json(data as Profile[]);
     } catch (error) {
       console.error("Erreur lors de la récupération des profils:", error);
@@ -74,14 +79,17 @@ export class ProfileController {
         res.status(404).json({ error: "Profil non trouvé" });
         return;
       }
+      const profileType = data?.profile_type;
 
-      if (data?.profile_type === "tipster") {
-        // Utiliser le service Tipster pour construire le tipster avec ses détails
+      if (profileType === ProfileType.TIPSTER) {
         const tipsterData = await TipsterService.buildTipsterWithDetails(
           data,
           true
         );
-        res.status(200).json(tipsterData);
+        res.status(200).json(tipsterData as Tipster);
+        return;
+      } else if (profileType === ProfileType.USER) {
+        res.status(200).json(data as User);
         return;
       }
 
@@ -131,6 +139,10 @@ export class ProfileController {
         accept_terms: acceptTerms,
         avatar_url: avatarUrl,
         profile_introduction_completed: true,
+        subscription_level:
+          profileType === ProfileType.TIPSTER
+            ? SubscriptionLevel.TIPSTER
+            : SubscriptionLevel.FREE,
       });
 
       if (error) {
