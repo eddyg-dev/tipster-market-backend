@@ -1,4 +1,4 @@
-import { Outcome } from "@tipster-market/shared-models";
+import { Outcome } from "@eddyg-dev/shared-models";
 
 export interface DatabaseMatch {
   id?: string;

@@ -4,7 +4,7 @@ import {
   SubscriptionLevel,
   Tipster,
   User,
-} from "@tipster-market/shared-models";
+} from "@eddyg-dev/shared-models";
 import { Request, Response } from "express";
 import { supabase } from "../config/supabase";
 import { TipsterService } from "../services/tipster.service";

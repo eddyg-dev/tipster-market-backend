@@ -1,4 +1,4 @@
-import { TipStatus } from "@tipster-market/shared-models";
+import { TipStatus } from "@eddyg-dev/shared-models";
 import { supabase } from "../config/supabase";
 import { StatsService } from "./stats.service";
 

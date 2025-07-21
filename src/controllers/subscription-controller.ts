@@ -1,4 +1,4 @@
-import { SubscriptionLevel } from "@tipster-market/shared-models";
+import { SubscriptionLevel } from "@eddyg-dev/shared-models";
 import { Request, Response } from "express";
 import Stripe from "stripe";
 import { supabase } from "../config/supabase";

@@ -1,4 +1,4 @@
-import { Tip, TipStatus } from "@tipster-market/shared-models";
+import { Tip, TipStatus } from "@eddyg-dev/shared-models";
 import { Request, Response } from "express";
 import { supabase } from "../config/supabase";
 import { ValidationService } from "../services/validation.service";

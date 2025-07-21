@@ -1,4 +1,4 @@
-import { Outcome, OutcomeType } from "@tipster-market/shared-models";
+import { Outcome, OutcomeType } from "@eddyg-dev/shared-models";
 import { MatchResponse } from "../data/models/match-response.model";
 
 export interface DatabaseMatch {
