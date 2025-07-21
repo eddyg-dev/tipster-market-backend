@@ -7,12 +7,15 @@ import jobRoutes from "./routes/admin/job-routes";
 import matchRoutes from "./routes/match-routes";
 import oddsApiRoutes from "./routes/odds-api-routes";
 import profileRoutes from "./routes/profile-routes";
+import subscriptionRoutes from "./routes/subscription-routes";
 import tipRoutes from "./routes/tip-routes";
 
 const app = express();
 
 // Middleware
 app.use(cors());
+// Route Stripe AVANT express.json()
+app.use("/api/subscription", subscriptionRoutes);
 app.use(express.json());
 
 // Routes

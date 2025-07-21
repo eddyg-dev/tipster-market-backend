@@ -89,4 +89,13 @@ export class OddsApiService {
       throw error;
     }
   }
+
+  static async getScores() {
+    const url = `${ODDS_API_BASE_URL}/scores?apiKey=${ODDS_API_KEY}&regions=eu`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  }
 }

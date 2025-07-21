@@ -7,9 +7,9 @@
     "start": "node dist/server.js",
     "dev": "nodemon src/server.ts",
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1",
     "update-odds": "ts-node scripts/update-odds.ts",
-    "check-results": "ts-node scripts/check-results.ts"
+    "update-sports": "ts-node scripts/update-sports.ts",
+    "check-scores": "ts-node scripts/check-scores.ts"
   },
   "keywords": [],
   "author": "",
@@ -18,9 +18,11 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
     "@tipster-market/shared-models": "file:../shared-models",
+    "@types/stripe": "^8.0.416",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
+    "stripe": "^18.3.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"
   },

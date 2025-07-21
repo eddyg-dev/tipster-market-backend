@@ -52,6 +52,16 @@ create table tips (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- Create sports table
+create table sports (
+  key text primary key,
+  "group" text,
+  title text not null,
+  description text,
+  active boolean default true,
+  has_outrights boolean default false
+);
+
 
 -- Create indexes
 create index idx_matches_commence_time on matches(commence_time);
