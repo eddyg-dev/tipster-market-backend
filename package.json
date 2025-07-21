@@ -17,7 +17,7 @@
   "type": "commonjs",
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
-    "@tipster-market/shared-models": "file:../shared-models",
+    "@eddyg-dev/shared-models": "1.0.1",
     "@types/stripe": "^8.0.416",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
