@@ -1,4 +1,5 @@
 import { TipStatus } from "@eddyg-dev/shared-models";
+import { TipResult } from "@eddyg-dev/shared-models/dist/enums/tip-result.enum";
 import { supabase } from "../config/supabase";
 
 export interface TipsterStats {
@@ -23,10 +24,10 @@ export class StatsService {
       if (tipsError) throw tipsError;
 
       const completedTips = tips.filter(
-        (tip) => tip.status !== TipStatus.AVAILABLE
+        (tip) => tip.status !== TipStatus.HISTORICAL
       );
       const wonTips = completedTips.filter(
-        (tip) => tip.status === TipStatus.WON
+        (tip) => tip.result === TipResult.WON
       );
       const totalTips = completedTips.length;
       const winRate = totalTips > 0 ? (wonTips.length / totalTips) * 100 : 0;
@@ -36,7 +37,7 @@ export class StatsService {
       let totalReturn = 0;
 
       completedTips.forEach((tip) => {
-        if (tip.status === TipStatus.WON) {
+        if (tip.result === TipResult.WON) {
           totalReturn += tip.amount * tip.price;
         }
         totalInvestment += tip.amount;
@@ -49,7 +50,7 @@ export class StatsService {
 
       // Calculer les gains totaux
       const totalEarnings = completedTips.reduce((sum, tip) => {
-        if (tip.status === TipStatus.WON) {
+        if (tip.result === TipResult.WON) {
           return sum + (tip.amount * tip.price - tip.amount);
         }
         return sum - tip.amount;

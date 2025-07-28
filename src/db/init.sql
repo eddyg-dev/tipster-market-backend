@@ -3,13 +3,16 @@ drop table if exists tips cascade;
 drop table if exists matches cascade;
 drop table if exists profiles cascade;
 drop type if exists tip_status cascade;
+drop type if exists tip_result cascade;
 drop type if exists profile_type cascade;
+drop type if exists subscription_level cascade;
 
 -- Enable UUID extension
 create extension if not exists "uuid-ossp";
 
 -- Create enums for tip status and profile type
-create type tip_status as enum ('available', 'in_progress', 'won', 'lost', 'void', 'cancelled');
+create type tip_status as enum ('in_progress', 'historical');
+create type tip_result as enum ('initial', 'won', 'lost', 'cancelled');
 create type profile_type as enum ('tipster', 'user');
 create type subscription_level as enum ('free', 'premium', 'tipster');
 
@@ -48,7 +51,8 @@ create table tips (
   price numeric not null,
   analysis text,
   deadline timestamp with time zone not null,
-  status tip_status default 'available' not null,
+  status tip_status default 'in_progress' not null,
+  result tip_result default 'initial' not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 

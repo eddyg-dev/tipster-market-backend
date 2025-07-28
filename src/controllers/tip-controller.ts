@@ -1,4 +1,5 @@
 import { Tip, TipStatus } from "@eddyg-dev/shared-models";
+import { TipResult } from "@eddyg-dev/shared-models/dist/enums/tip-result.enum";
 import { Request, Response } from "express";
 import { supabase } from "../config/supabase";
 import { ValidationService } from "../services/validation.service";
@@ -8,25 +9,12 @@ export class TipController {
    * Crée un nouveau pronostic
    */
   static async createTip(req: Request, res: Response): Promise<void> {
-    console.log("=== CREATE TIP REQUEST ===");
-    console.log("Headers:", req.headers);
-    console.log("Body:", req.body);
-    console.log("User:", req.user);
-
     if (
       !req.body ||
       !req.body.selectedOutcomes ||
       !req.body.amount ||
       !req.body.price
     ) {
-      console.log("Missing data validation failed:");
-      console.log("- req.body exists:", !!req.body);
-      console.log(
-        "- req.body.selectedOutcomes exists:",
-        !!req.body?.selectedOutcomes
-      );
-      console.log("- req.body.amount exists:", !!req.body?.amount);
-      console.log("- req.body.price exists:", !!req.body?.price);
       res.status(400).json({ error: "Données manquantes dans la requête" });
       return;
     }
@@ -53,7 +41,8 @@ export class TipController {
         price,
         analysis,
         deadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24h par défaut
-        status: TipStatus.AVAILABLE,
+        status: TipStatus.IN_PROGRESS,
+        result: TipResult.INITIAL,
       });
 
       if (error) {

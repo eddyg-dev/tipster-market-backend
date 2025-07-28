@@ -38,7 +38,7 @@ export class TipsterService {
       );
       tipsterData.tips = tipsWithMatches;
       tipsterData.stats.active_tips_count = tipsWithMatches.filter(
-        (tip) => tip.status === TipStatus.AVAILABLE
+        (tip) => tip.status === TipStatus.IN_PROGRESS
       ).length;
     }
 
