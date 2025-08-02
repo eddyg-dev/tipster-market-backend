@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
+import moment from "moment";
 import { supabase } from "../config/supabase";
-import { MatchUtils } from "../utils/match.utils";
 
 export class MatchController {
   /**
@@ -8,19 +8,20 @@ export class MatchController {
    */
   static async getAllMatches(req: Request, res: Response) {
     try {
+      // Calculer les dates pour la semaine à venir avec Moment
+      const now = moment(); // À partir de maintenant
+      const endOfDayIn7Days = moment().add(7, "days").endOf("day");
+
       const { data: matches, error: matchesError } = await supabase
         .from("matches")
         .select("*")
+        .gte("commence_time", now.toISOString())
+        .lte("commence_time", endOfDayIn7Days.toISOString())
         .order("commence_time", { ascending: true });
 
       if (matchesError) throw matchesError;
 
-      const matchesWithSportTitle = matches.map((match) => ({
-        ...match,
-        sport_title: MatchUtils.getSportTitle(match.sport_key),
-      }));
-
-      res.json(matchesWithSportTitle);
+      res.json(matches);
     } catch (error) {
       console.error("Erreur lors de la récupération des matches:", error);
       res.status(500).json({ error: "Erreur serveur" });

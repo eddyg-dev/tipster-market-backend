@@ -2,7 +2,6 @@ import { Tip, TipStatus } from "@eddyg-dev/shared-models";
 import { TipResult } from "@eddyg-dev/shared-models/dist/enums/tip-result.enum";
 import { Request, Response } from "express";
 import { supabase } from "../config/supabase";
-import { ValidationService } from "../services/validation.service";
 
 export class TipController {
   /**
@@ -28,12 +27,6 @@ export class TipController {
     const { selectedOutcomes, amount, price, analysis } = req.body;
 
     try {
-      const validation = await ValidationService.validateTipster(tipsterId);
-      if (!validation.isValid) {
-        res.status(400).json({ error: validation.error });
-        return;
-      }
-
       const { data, error } = await supabase.from("tips").insert({
         tipster_id: tipsterId,
         selected_outcomes: selectedOutcomes,

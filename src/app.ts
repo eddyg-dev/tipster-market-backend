@@ -7,6 +7,7 @@ import jobRoutes from "./routes/admin/job-routes";
 import matchRoutes from "./routes/match-routes";
 import oddsApiRoutes from "./routes/odds-api-routes";
 import profileRoutes from "./routes/profile-routes";
+import sportRoutes from "./routes/sport-routes";
 import subscriptionRoutes from "./routes/subscription-routes";
 import tipRoutes from "./routes/tip-routes";
 
@@ -23,7 +24,7 @@ app.use("/api/matches", matchRoutes);
 app.use("/api/tips", authMiddleware, tipRoutes);
 app.use("/api/odds", oddsApiRoutes);
 app.use("/api/profiles", profileRoutes);
-
+app.use("/api/sports", sportRoutes);
 app.use("/api/admin/scripts", authMiddleware, jobRoutes);
 app.use("/api/cron", jobRoutes);
 

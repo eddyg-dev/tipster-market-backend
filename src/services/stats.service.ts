@@ -1,5 +1,4 @@
-import { TipStatus } from "@eddyg-dev/shared-models";
-import { TipResult } from "@eddyg-dev/shared-models/dist/enums/tip-result.enum";
+import { TipResult, TipStatus } from "@eddyg-dev/shared-models";
 import { supabase } from "../config/supabase";
 
 export interface TipsterStats {
@@ -23,9 +22,7 @@ export class StatsService {
 
       if (tipsError) throw tipsError;
 
-      const completedTips = tips.filter(
-        (tip) => tip.status !== TipStatus.HISTORICAL
-      );
+      const completedTips = tips.filter((tip) => tip.status !== TipStatus);
       const wonTips = completedTips.filter(
         (tip) => tip.result === TipResult.WON
       );

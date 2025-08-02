@@ -1,7 +1,11 @@
+import {
+  Market,
+  MatchResponse,
+  Region,
+  ScoreResponse,
+} from "@eddyg-dev/shared-models";
 import dotenv from "dotenv";
-import { frenchMatchesMock } from "../data/mocks/odds-api/matches.mock";
 import { oddsApiSportsMock } from "../data/mocks/odds-api/sports.mock";
-import { MatchResponse } from "../data/models/match-response.model";
 import { SportResponse } from "../data/models/sport-response.model";
 
 dotenv.config();
@@ -12,11 +16,6 @@ const ODDS_API_BASE_URL = "https://api.the-odds-api.com/v4";
 if (!ODDS_API_KEY) {
   throw new Error("ODDS_API_KEY is not defined in environment variables");
 }
-
-const sportsKeys = oddsApiSportsMock
-  .filter((sport) => sport.group === "Soccer")
-  .map((sport) => sport.key)
-  .join(",");
 
 export class OddsApiService {
   /**
@@ -42,60 +41,74 @@ export class OddsApiService {
    * @param regions Les régions pour les cotes (ex: 'eu')
    * @param markets Les types de marchés (ex: 'h2h')
    */
-  static async getMatches(
-    sportKey: string = "soccer_france_ligue_one",
-    regions: string = "eu",
-    markets: string = "h2h"
+  static async getMatchesWithOdds(
+    sportKeys: string[],
+    regions: Region[],
+    markets: Market[]
   ): Promise<MatchResponse[]> {
     try {
-      const url = `${ODDS_API_BASE_URL}/sports/${sportKey}/odds?apiKey=${ODDS_API_KEY}&regions=${regions}&markets=${markets}`;
-      console.log("url", url);
+      const regionsString = regions.join(",");
+      const marketsString = markets.join(",");
+      const allMatches: MatchResponse[] = [];
+
+      // Faire des appels parallèles pour tous les sports (avec limitation de taux)
+      const promises = sportKeys.map(async (sportKey, index) => {
+        // Ajouter un délai progressif pour éviter de surcharger l'API
+        if (index > 0) {
+          await new Promise((resolve) => setTimeout(resolve, 100 * index));
+        }
+        try {
+          const url = `${ODDS_API_BASE_URL}/sports/${sportKey}/odds?apiKey=${ODDS_API_KEY}&regions=${regionsString}&markets=${marketsString}`;
+          console.log(`Récupération des matches pour ${sportKey}...`);
+
+          const response = await fetch(url);
+          if (!response.ok) {
+            console.error(`Erreur pour ${sportKey}: HTTP ${response.status}`);
+            return []; // Retourner un tableau vide en cas d'erreur
+          }
+
+          const matches = await response.json();
+          console.log(`${matches.length} matches trouvés pour ${sportKey}`);
+          return matches;
+        } catch (error) {
+          console.error(
+            `Erreur lors de la récupération pour ${sportKey}:`,
+            error
+          );
+          return []; // Retourner un tableau vide en cas d'erreur
+        }
+      });
+
+      // Attendre tous les appels en parallèle
+      const results = await Promise.all(promises);
+
+      // Combiner tous les résultats
+      results.forEach((matches) => {
+        allMatches.push(...matches);
+      });
+
+      return allMatches;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getScores(): Promise<ScoreResponse[]> {
+    const sportKeys = process.env.SOCCER_AUTOMATIC_SPORTS?.split(",");
+    const scores = [];
+    if (!sportKeys) {
+      throw new Error(
+        "SOCCER_AUTOMATIC_SPORTS is not defined in environment variables"
+      );
+    }
+    for (const sportKey of sportKeys) {
+      const url = `${ODDS_API_BASE_URL}/sports/${sportKey}/scores?apiKey=${ODDS_API_KEY}&dateFormat=iso&daysFrom=3`;
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const data = await response.json();
-      console.log("data", data);
-      return data;
-    } catch (error) {
-      console.error("Erreur lors de la récupération des matchs:", error);
-      throw error;
+      scores.push(await response.json());
     }
-  }
-
-  /**
-   * Récupère les cotes pour un match spécifique
-   * @param sportKey La clé du sport
-   * @param matchId L'ID du match
-   * @param regions Les régions pour les cotes
-   * @param markets Les types de marchés
-   */
-  static async getMatch(
-    sportKey: string,
-    matchId: string,
-    regions: string = "eu",
-    markets: string = "h2h"
-  ): Promise<MatchResponse> {
-    try {
-      const url = `${ODDS_API_BASE_URL}/sports/${sportKey}/events/${matchId}/odds?apiKey=${ODDS_API_KEY}&regions=${regions}&markets=${markets}`;
-      // const response = await fetch(url);
-      // if (!response.ok) {
-      //   throw new Error(`HTTP error! status: ${response.status}`);
-      // }
-      // return await response.json();
-      return frenchMatchesMock[0];
-    } catch (error) {
-      console.error("Erreur lors de la récupération des cotes:", error);
-      throw error;
-    }
-  }
-
-  static async getScores() {
-    const url = `${ODDS_API_BASE_URL}/scores?apiKey=${ODDS_API_KEY}&regions=eu`;
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return await response.json();
+    return scores;
   }
 }

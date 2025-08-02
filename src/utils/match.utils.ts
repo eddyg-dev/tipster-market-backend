@@ -1,5 +1,9 @@
-import { Outcome, OutcomeType } from "@eddyg-dev/shared-models";
-import { MatchResponse } from "../data/models/match-response.model";
+import {
+  MatchResponse,
+  Outcome,
+  OutcomeResult,
+  OutcomeType,
+} from "@eddyg-dev/shared-models";
 
 export interface DatabaseMatch {
   match_id: string;
@@ -20,13 +24,17 @@ export class MatchUtils {
       matchResponse.bookmakers
     );
 
+    if (matchResponse.id === "7e06369e50957ed9eb788102f4220192") {
+      console.log("matchResponse", matchResponse);
+      console.log("outcomes", outcomes);
+    }
     return {
       match_id: matchResponse.id,
       home_team: matchResponse.home_team,
       away_team: matchResponse.away_team,
       commence_time: matchResponse.commence_time,
       sport_key: matchResponse.sport_key,
-      outcomes: outcomes,
+      outcomes,
     };
   }
 
@@ -74,17 +82,19 @@ export class MatchUtils {
    */
   private static extractOutcomesFromBookmakers(bookmakers: any[]): Outcome[] {
     const outcomes: Outcome[] = [];
-    console.log(bookmakers);
-    const winamax = bookmakers.find(
-      (bookmaker) => bookmaker.key === "winamax_fr"
+    const bookmarkerChoice = process.env.BOOKMARKER;
+    let bookmarker = bookmakers.find(
+      (bookmaker) => bookmarkerChoice === bookmaker.key
     );
-    if (winamax) {
-      for (const market of winamax.markets) {
+    bookmarker = bookmarker ?? bookmakers[0];
+    if (bookmarker) {
+      for (const market of bookmarker.markets) {
         for (const outcome of market.outcomes) {
           outcomes.push({
             name: outcome.name,
             price: outcome.price,
             type: market.key as OutcomeType,
+            result: OutcomeResult.Initial,
           });
         }
       }
