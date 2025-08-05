@@ -5,7 +5,6 @@ import {
   ScoreResponse,
 } from "@eddyg-dev/shared-models";
 import dotenv from "dotenv";
-import { oddsApiSportsMock } from "../data/mocks/odds-api/sports.mock";
 import { SportResponse } from "../data/models/sport-response.model";
 
 dotenv.config();
@@ -23,14 +22,9 @@ export class OddsApiService {
    */
   static async getSports(): Promise<SportResponse[]> {
     try {
-      // const response = await fetch(`${ODDS_API_BASE_URL}/sports/`);
-      // if (!response.ok) {
-      //   throw new Error(`HTTP error! status: ${response.status}`);
-      // }
-      // return await response.json();
-      return oddsApiSportsMock;
+      const response = await fetch(`${ODDS_API_BASE_URL}/sports/`);
+      return await response.json();
     } catch (error) {
-      console.error("Erreur lors de la récupération des sports:", error);
       throw error;
     }
   }

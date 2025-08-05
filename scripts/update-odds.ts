@@ -6,7 +6,6 @@ dotenv.config();
 async function main() {
   try {
     const result = await UpdateOddsService.execute();
-    console.log(result.success ? "✅" : "❌", result.message);
     process.exit(result.success ? 0 : 1);
   } catch (error) {
     console.error(
