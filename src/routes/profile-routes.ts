@@ -4,6 +4,7 @@ import { ProfileController } from "../controllers/profile-controller";
 const router = express.Router();
 
 router.get("/tipsters", ProfileController.getTipsters);
+router.get("/pseudos", ProfileController.getAllPseudos);
 router.post("/:id/introduction", ProfileController.saveProfileIntroduction);
 router.get("/:id", ProfileController.getProfileById);
 
