@@ -16,7 +16,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@eddyg-dev/shared-models": "file:../shared-models",
+    "@eddyg-dev/shared-models": "latest",
     "@supabase/supabase-js": "^2.49.4",
     "@types/moment": "^2.11.29",
     "@types/stripe": "^8.0.416",
