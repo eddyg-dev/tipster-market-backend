@@ -129,19 +129,24 @@ export class ProfileController {
     const userId = req.params.id;
 
     try {
-      const { data, error } = await supabase.from("profiles").upsert({
-        id: userId,
-        username: username,
-        birth_date: birthDate,
-        profile_type: profileType,
-        accept_terms: acceptTerms,
-        avatar_url: avatarUrl,
-        profile_introduction_completed: true,
-        subscription_level:
-          profileType === ProfileType.TIPSTER
-            ? SubscriptionLevel.TIPSTER
-            : SubscriptionLevel.FREE,
-      });
+      const { data, error } = await supabase.from("profiles").upsert(
+        {
+          id: userId,
+          username: username,
+          birth_date: birthDate,
+          profile_type: profileType,
+          accept_terms: acceptTerms,
+          avatar_url: avatarUrl,
+          profile_introduction_completed: true,
+          subscription_level:
+            profileType === ProfileType.TIPSTER
+              ? SubscriptionLevel.TIPSTER
+              : SubscriptionLevel.FREE,
+        },
+        {
+          onConflict: "id",
+        }
+      );
 
       if (error) {
         console.error("Erreur Supabase:", error);
