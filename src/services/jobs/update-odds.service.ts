@@ -1,5 +1,6 @@
-import { Market, Region } from "@eddyg-dev/shared-models";
 import { supabase } from "../../config/supabase";
+import { Market } from "../../shared-data/enums/market.enum";
+import { Region } from "../../shared-data/enums/region.enum";
 import { MatchUtils } from "../../utils/match.utils";
 import { OddsApiService } from "../odds-api.service";
 

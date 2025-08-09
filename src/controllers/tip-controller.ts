@@ -1,7 +1,8 @@
-import { Tip, TipStatus } from "@eddyg-dev/shared-models";
-import { TipResult } from "@eddyg-dev/shared-models/dist/enums/tip-result.enum";
 import { Request, Response } from "express";
 import { supabase } from "../config/supabase";
+import { TipResult } from "../shared-data/enums/tip-result.enum";
+import { TipStatus } from "../shared-data/enums/tip-status.enum";
+import { Tip } from "../shared-data/models/tip.model";
 
 export class TipController {
   /**

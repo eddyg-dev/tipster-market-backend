@@ -1,11 +1,9 @@
-import {
-  Market,
-  MatchResponse,
-  Region,
-  ScoreResponse,
-} from "@eddyg-dev/shared-models";
 import dotenv from "dotenv";
 import { SportResponse } from "../data/models/sport-response.model";
+import { Market } from "../shared-data/enums/market.enum";
+import { Region } from "../shared-data/enums/region.enum";
+import { MatchResponse } from "../shared-data/models/odds-api-response/match-response.model";
+import { ScoreResponse } from "../shared-data/models/odds-api-response/score-response.model";
 
 dotenv.config();
 

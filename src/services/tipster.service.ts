@@ -1,5 +1,5 @@
-import { TipStatus } from "@eddyg-dev/shared-models";
 import { supabase } from "../config/supabase";
+import { TipStatus } from "../shared-data/enums/tip-status.enum";
 import { StatsService } from "./stats.service";
 
 export class TipsterService {

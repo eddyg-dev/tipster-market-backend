@@ -1,9 +1,7 @@
-import {
-  MatchResponse,
-  Outcome,
-  OutcomeResult,
-  OutcomeType,
-} from "@eddyg-dev/shared-models";
+import { OutcomeResult } from "../shared-data/enums/outcome-result.enum";
+import { OutcomeType } from "../shared-data/enums/outcome-type.enum";
+import { MatchResponse } from "../shared-data/models/odds-api-response/match-response.model";
+import { Outcome } from "../shared-data/models/outcome.model";
 
 export interface DatabaseMatch {
   match_id: string;

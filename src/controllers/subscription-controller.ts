@@ -1,7 +1,7 @@
-import { SubscriptionLevel } from "@eddyg-dev/shared-models";
 import { Request, Response } from "express";
 import Stripe from "stripe";
 import { supabase } from "../config/supabase";
+import { SubscriptionLevel } from "../shared-data/enums/subscription-level.enum";
 
 function parseStripeStatusToSubscriptionLevel(
   status: string

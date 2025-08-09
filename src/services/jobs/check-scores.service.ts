@@ -1,9 +1,7 @@
-import {
-  OutcomeResult,
-  OutcomeType,
-  ScoreResponse,
-} from "@eddyg-dev/shared-models";
 import { supabase } from "../../config/supabase";
+import { OutcomeResult } from "../../shared-data/enums/outcome-result.enum";
+import { OutcomeType } from "../../shared-data/enums/outcome-type.enum";
+import { ScoreResponse } from "../../shared-data/models/odds-api-response/score-response.model";
 import { OddsApiService } from "../odds-api.service";
 
 export class CheckScoresService {

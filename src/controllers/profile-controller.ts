@@ -1,13 +1,11 @@
-import {
-  Profile,
-  ProfileType,
-  SubscriptionLevel,
-  Tipster,
-  User,
-} from "@eddyg-dev/shared-models";
+import { User } from "@supabase/supabase-js";
 import { Request, Response } from "express";
 import { supabase } from "../config/supabase";
 import { TipsterService } from "../services/tipster.service";
+import { ProfileType } from "../shared-data/enums/profile-type.enum";
+import { SubscriptionLevel } from "../shared-data/enums/subscription-level.enum";
+import { Profile } from "../shared-data/models/profile.model";
+import { Tipster } from "../shared-data/models/tipster.model";
 
 export class ProfileController {
   static async getProfiles(req: Request, res: Response): Promise<void> {

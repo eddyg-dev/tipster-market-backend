@@ -1,5 +1,6 @@
-import { TipResult, TipStatus } from "@eddyg-dev/shared-models";
 import { supabase } from "../config/supabase";
+import { TipResult } from "../shared-data/enums/tip-result.enum";
+import { TipStatus } from "../shared-data/enums/tip-status.enum";
 
 export interface TipsterStats {
   winRate: number;

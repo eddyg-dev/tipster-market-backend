@@ -1,5 +1,6 @@
-import { Market, Region } from "@eddyg-dev/shared-models";
 import { OddsApiService } from "../services/odds-api.service";
+import { Market } from "../shared-data/enums/market.enum";
+import { Region } from "../shared-data/enums/region.enum";
 
 export class OddsController {
   /**
