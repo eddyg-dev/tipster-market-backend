@@ -22,7 +22,9 @@ export class OddsApiService {
    */
   static async getSports(): Promise<SportResponse[]> {
     try {
-      const response = await fetch(`${ODDS_API_BASE_URL}/sports/`);
+      const response = await fetch(
+        `${ODDS_API_BASE_URL}/sports?apiKey=${ODDS_API_KEY}`
+      );
       return await response.json();
     } catch (error) {
       throw error;
