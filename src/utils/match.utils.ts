@@ -22,10 +22,6 @@ export class MatchUtils {
       matchResponse.bookmakers
     );
 
-    if (matchResponse.id === "7e06369e50957ed9eb788102f4220192") {
-      console.log("matchResponse", matchResponse);
-      console.log("outcomes", outcomes);
-    }
     return {
       match_id: matchResponse.id,
       home_team: matchResponse.home_team,

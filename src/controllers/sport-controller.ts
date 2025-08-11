@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import { supabase } from "../config/supabase";
-import { SportResponse } from "../data/models/sport-response.model";
+import { countryCodes } from "../shared-data/constants/country-codes.constant";
+import { sportGroupIcons } from "../shared-data/constants/sport-group-icons.constant";
+import { SportGroupKey } from "../shared-data/enums/sport-group.key.enum";
+import { SportResponse } from "../shared-data/models/odds-api-response/sport-response.model";
 
 export class SportController {
   static async getAllSports(req: Request, res: Response) {
@@ -10,7 +13,14 @@ export class SportController {
         .select("*");
       if (sportsError) throw sportsError;
       const sportsDict = (sports as SportResponse[]).reduce((acc, sport) => {
-        acc[sport.key] = sport;
+        const flag = countryCodes.find((country) =>
+          sport.key.includes(country.name)
+        );
+        acc[sport.key] = {
+          ...sport,
+          groupIcon: sportGroupIcons[sport.group as SportGroupKey],
+          countryCode: flag?.code,
+        };
         return acc;
       }, {} as Record<string, SportResponse>);
 

@@ -1,9 +1,9 @@
 import dotenv from "dotenv";
-import { SportResponse } from "../data/models/sport-response.model";
 import { Market } from "../shared-data/enums/market.enum";
 import { Region } from "../shared-data/enums/region.enum";
 import { MatchResponse } from "../shared-data/models/odds-api-response/match-response.model";
 import { ScoreResponse } from "../shared-data/models/odds-api-response/score-response.model";
+import { SportResponse } from "../shared-data/models/odds-api-response/sport-response.model";
 
 dotenv.config();
 

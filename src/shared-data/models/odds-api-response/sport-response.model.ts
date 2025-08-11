@@ -5,4 +5,6 @@ export interface SportResponse {
   description: string;
   active: boolean;
   has_outrights: boolean;
+  groupIcon?: string;
+  countryCode?: string;
 }
