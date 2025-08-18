@@ -13,7 +13,7 @@ export class CheckScoresService {
       // Mettre à jour les outcomes des matches avec des scores complétés
       await this.updateMatchOutcomes(completeScores);
 
-      return { success: true, message: "Results checked" };
+      return { success: true, message: "Match results updated" };
     } catch (error) {
       return {
         success: false,
@@ -46,8 +46,7 @@ export class CheckScoresService {
         // Mettre à jour les outcomes du match
         const updatedOutcomes = this.updateOutcomesWithResult(
           match.outcomes,
-          matchResult,
-          score
+          matchResult
         );
 
         // Sauvegarder les outcomes mis à jour
@@ -78,12 +77,16 @@ export class CheckScoresService {
       throw new Error("Scores invalides");
     }
 
-    const homeScoreValue = parseInt(score.scores[0]?.score || "0");
-    const awayScoreValue = parseInt(score.scores[1]?.score || "0");
+    const firstScoreValue = parseInt(score.scores[0]?.score || null);
+    const secondScoreValue = parseInt(score.scores[1]?.score || null);
 
-    if (homeScoreValue > awayScoreValue) {
+    if (firstScoreValue === null || secondScoreValue === null) {
+      return OutcomeResult.Initial;
+    }
+
+    if (firstScoreValue > secondScoreValue) {
       return score.home_team;
-    } else if (awayScoreValue > homeScoreValue) {
+    } else if (secondScoreValue > firstScoreValue) {
       return score.away_team;
     } else {
       return "draw";
@@ -95,8 +98,7 @@ export class CheckScoresService {
    */
   private static updateOutcomesWithResult(
     outcomes: any[],
-    matchResult: string,
-    score: any
+    matchResult: string
   ): any[] {
     return outcomes.map((outcome) => {
       const updatedOutcome = { ...outcome };

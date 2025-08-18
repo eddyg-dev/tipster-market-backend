@@ -1,10 +1,33 @@
 import { Request, Response } from "express";
+import moment from "moment";
 import { supabase } from "../config/supabase";
 import { TipResult } from "../shared-data/enums/tip-result.enum";
 import { TipStatus } from "../shared-data/enums/tip-status.enum";
+import { Outcome } from "../shared-data/models/outcome.model";
 import { Tip } from "../shared-data/models/tip.model";
 
 export class TipController {
+  /**
+   * Calcule la deadline basée sur la date du premier match
+   */
+  private static calculateDeadline(selectedOutcomes: Outcome[]): string {
+    let earliestMatchDate: moment.Moment | null = null;
+
+    if (selectedOutcomes && selectedOutcomes.length > 0) {
+      for (const outcome of selectedOutcomes) {
+        if (outcome.match?.commence_time) {
+          const matchDate = moment(outcome.match.commence_time);
+          if (!earliestMatchDate || matchDate.isBefore(earliestMatchDate)) {
+            earliestMatchDate = matchDate;
+          }
+        }
+      }
+    }
+
+    return earliestMatchDate
+      ? earliestMatchDate.toISOString()
+      : moment().add(24, "hours").toISOString();
+  }
   /**
    * Crée un nouveau pronostic
    */
@@ -28,13 +51,15 @@ export class TipController {
     const { selectedOutcomes, amount, price, analysis } = req.body;
 
     try {
+      const deadline = TipController.calculateDeadline(selectedOutcomes);
+
       const { data, error } = await supabase.from("tips").insert({
         tipster_id: tipsterId,
         selected_outcomes: selectedOutcomes,
         amount,
         price,
         analysis,
-        deadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24h par défaut
+        deadline,
         status: TipStatus.IN_PROGRESS,
         result: TipResult.INITIAL,
       });
@@ -53,41 +78,83 @@ export class TipController {
   }
 
   static async getTips(req: Request, res: Response): Promise<void> {
-    const { data, error } = await supabase
+    // Récupérer d'abord les tips
+    const { data: tipsData, error: tipsError } = await supabase
       .from("tips")
       .select(
-        "id, tipster_id, selected_outcomes, amount, price, deadline, status, created_at, tipster:tipster_id(*)"
+        "id, tipster_id, selected_outcomes, amount, price, deadline, status, created_at"
       )
       .order("created_at", { ascending: false });
-    if (error) {
-      res.status(500).json({ error: error.message });
+
+    if (tipsError) {
+      res.status(500).json({ error: tipsError.message });
       return;
     }
 
+    // Récupérer les profils des tipsters
+    const tipsterIds = tipsData?.map((tip) => tip.tipster_id) || [];
+    const { data: profilesData, error: profilesError } = await supabase
+      .from("profiles")
+      .select("*")
+      .in("id", tipsterIds);
+
+    if (profilesError) {
+      res.status(500).json({ error: profilesError.message });
+      return;
+    }
+
+    // Combiner les données
     const transformedData =
-      data?.map((tip) => ({
-        ...tip,
-        selected_outcomes_count: Array.isArray(tip.selected_outcomes)
-          ? tip.selected_outcomes.length
-          : 0,
-        selected_outcomes: [],
-        tipster: tip.tipster,
-      })) || [];
+      tipsData?.map((tip) => {
+        const tipster = profilesData?.find(
+          (profile) => profile.id === tip.tipster_id
+        );
+        return {
+          ...tip,
+          selected_outcomes_count: Array.isArray(tip.selected_outcomes)
+            ? tip.selected_outcomes.length
+            : 0,
+          selected_outcomes: [],
+          tipster,
+        };
+      }) || [];
 
     res.status(200).json(transformedData as unknown as Tip[]);
   }
 
   static async getTip(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
-    const { data, error } = await supabase
+
+    // Récupérer le tip
+    const { data: tipData, error: tipError } = await supabase
       .from("tips")
-      .select("* , tipster:tipster_id(*)")
+      .select("*")
       .eq("id", id)
       .single();
-    if (error) {
-      res.status(500).json({ error: error.message });
+
+    if (tipError) {
+      res.status(500).json({ error: tipError.message });
       return;
     }
-    res.status(200).json(data);
+
+    // Récupérer le profil du tipster
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", tipData.tipster_id)
+      .single();
+
+    if (profileError) {
+      res.status(500).json({ error: profileError.message });
+      return;
+    }
+
+    // Combiner les données
+    const result = {
+      ...tipData,
+      tipster: profileData,
+    };
+
+    res.status(200).json(result);
   }
 }

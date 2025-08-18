@@ -9,7 +9,9 @@
     "build": "tsc",
     "update-odds": "ts-node scripts/update-odds.ts",
     "update-sports": "ts-node scripts/update-sports.ts",
-    "check-scores": "ts-node scripts/check-scores.ts"
+    "check-scores": "ts-node scripts/check-scores.ts",
+    "update-tips-results": "ts-node scripts/update-tips-results.ts",
+    "process-results": "ts-node scripts/process-results.ts"
   },
   "keywords": [],
   "author": "",

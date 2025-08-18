@@ -20,6 +20,7 @@ create type subscription_level as enum ('free', 'premium', 'tipster');
 create table profiles (
   id uuid primary key,
   username text not null,
+  email text not null,
   birth_date date,
   profile_type profile_type not null,
   accept_terms boolean default false,

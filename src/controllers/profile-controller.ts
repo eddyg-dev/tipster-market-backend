@@ -124,7 +124,7 @@ export class ProfileController {
       return;
     }
 
-    const { username, birthDate, profileType, acceptTerms, avatarUrl } =
+    const { username, birthDate, profileType, acceptTerms, avatarUrl, email } =
       req.body;
     const userId = req.params.id;
 
@@ -142,6 +142,7 @@ export class ProfileController {
             profileType === ProfileType.TIPSTER
               ? SubscriptionLevel.TIPSTER
               : SubscriptionLevel.FREE,
+          email: email,
         },
         {
           onConflict: "id",
