@@ -1,4 +1,5 @@
 import { supabase } from "../config/supabase";
+import { TipsterStats } from "../shared-data";
 import { TipResult } from "../shared-data/enums/tip-result.enum";
 import { TipStatus } from "../shared-data/enums/tip-status.enum";
 
@@ -48,18 +49,22 @@ export class StatsService {
       }, 0);
 
       return {
-        winRate: Math.round(winRate * 100) / 100,
+        win_rate: Math.round(winRate * 100) / 100,
         roi: Math.round(roi * 100) / 100,
-        totalTips,
-        totalEarnings: Math.round(totalEarnings * 100) / 100,
+        rank: 0,
+        tips_count: totalTips,
+        active_tips_count: completedTips.length,
+        points: Math.round(totalEarnings * 100) / 100,
       };
     } catch (error) {
       console.error("Erreur lors du calcul des statistiques:", error);
       return {
-        winRate: 0,
+        active_tips_count: 0,
+        rank: 0,
+        win_rate: 0,
         roi: 0,
-        totalTips: 0,
-        totalEarnings: 0,
+        tips_count: 0,
+        points: 0,
       };
     }
   }
@@ -90,7 +95,7 @@ export class StatsService {
 
       // Trier par ROI décroissant
       return tipstersWithStats
-        .filter((tipster) => tipster.totalTips > 0)
+        .filter((tipster) => tipster.tips_count > 0)
         .sort((a, b) => b.roi - a.roi)
         .map((tipster, index) => ({
           ...tipster,
