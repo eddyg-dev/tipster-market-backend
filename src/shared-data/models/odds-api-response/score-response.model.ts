@@ -4,11 +4,19 @@ export interface ScoreResponse {
   sport_title: string;
   commence_time: string;
   completed: boolean;
-  home_team: string; //home team name
-  away_team: string; //away team name
+  home_team: string;
+  away_team: string;
   scores: {
-    name: string;
-    score: string;
-  }[];
+    scores: {
+      name: string;
+      score: string;
+    }[];
+    outcome_results?: {
+      outcome_id: string;
+      type: string;
+      name: string;
+      result: "right" | "wrong" | "initial";
+    }[];
+  };
   last_update: string;
 }

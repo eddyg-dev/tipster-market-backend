@@ -20,7 +20,6 @@ export class MatchController {
         .order("commence_time", { ascending: true });
 
       if (matchesError) throw matchesError;
-
       res.json(matches);
     } catch (error) {
       console.error("Erreur lors de la récupération des matches:", error);

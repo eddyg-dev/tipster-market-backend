@@ -2,6 +2,7 @@
 drop table if exists tips cascade;
 drop table if exists matches cascade;
 drop table if exists profiles cascade;
+drop table if exists sports cascade;
 drop type if exists tip_status cascade;
 drop type if exists tip_result cascade;
 drop type if exists profile_type cascade;
@@ -26,7 +27,7 @@ create table profiles (
   accept_terms boolean default false,
   profile_introduction_completed boolean default false,
   avatar_url text,
-  subscription_level subscription_level not null,
+  subscription_level subscription_level,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -40,6 +41,7 @@ create table matches (
   commence_time timestamp with time zone not null,
   sport_key text not null,
   outcomes jsonb,
+  scores jsonb,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
@@ -54,6 +56,7 @@ create table tips (
   deadline timestamp with time zone not null,
   status tip_status default 'in_progress' not null,
   result tip_result default 'initial' not null,
+  is_checked boolean default false not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
@@ -100,11 +103,13 @@ BEGIN
   INSERT INTO public.profiles (
     id, 
     username,
+    email,
     profile_type
   )
   VALUES (
     new.id,
     split_part(new.email, '@', 1),
+    new.email,
     'user'
   );
   RETURN new;

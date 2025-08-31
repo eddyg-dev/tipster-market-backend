@@ -10,6 +10,18 @@ export interface DatabaseMatch {
   commence_time: string;
   sport_key: string;
   outcomes?: any[];
+  scores?: {
+    scores: {
+      name: string;
+      score: string;
+    }[];
+    outcome_results?: {
+      outcome_id: string;
+      type: string;
+      name: string;
+      result: "right" | "wrong" | "initial";
+    }[];
+  };
 }
 
 export class MatchUtils {
@@ -18,9 +30,10 @@ export class MatchUtils {
    */
   static mapApiMatchToDatabase(matchResponse: MatchResponse): DatabaseMatch {
     // Extraire les outcomes des bookmakers
-    const outcomes = this.extractOutcomesFromBookmakers(
-      matchResponse.bookmakers
-    );
+    let outcomes = this.extractOutcomesFromBookmakers(matchResponse.bookmakers);
+    outcomes = outcomes.filter((outcome) => {
+      return process.env.OUTCOME_TYPES?.split(",").includes(outcome.type);
+    });
 
     return {
       match_id: matchResponse.id,

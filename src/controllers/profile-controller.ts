@@ -1,7 +1,6 @@
 import { User } from "@supabase/supabase-js";
 import { Request, Response } from "express";
 import { supabase } from "../config/supabase";
-import { TipsterService } from "../services/tipster.service";
 import { ProfileType } from "../shared-data/enums/profile-type.enum";
 import { SubscriptionLevel } from "../shared-data/enums/subscription-level.enum";
 import { Profile } from "../shared-data/models/profile.model";
@@ -28,7 +27,6 @@ export class ProfileController {
    */
   static async getTipsters(req: Request, res: Response): Promise<void> {
     try {
-      // Récupérer les tipsters de base
       const { data: tipsters, error } = await supabase
         .from("profiles")
         .select("id, username, avatar_url, created_at, updated_at")
@@ -36,29 +34,11 @@ export class ProfileController {
         .order("username", { ascending: true });
 
       if (error) {
-        console.error("Erreur Supabase:", error);
         res.status(500).json({ error: error.message });
         return;
       }
-
-      // Calculer les statistiques pour chaque tipster
-      const tipstersWithStats = await Promise.all(
-        tipsters.map(async (tipster) => {
-          return await TipsterService.buildTipsterWithDetails(tipster);
-        })
-      );
-
-      // Trier par ROI décroissant
-      tipstersWithStats.sort((a: any, b: any) => b.stats.roi - a.stats.roi);
-
-      // Ajouter le rank basé sur le tri
-      tipstersWithStats.forEach((tipster: any, index: number) => {
-        tipster.stats.rank = index + 1;
-      });
-
-      res.status(200).json(tipstersWithStats);
+      res.status(200).json(tipsters);
     } catch (error) {
-      console.error("Erreur lors de la récupération des tipsters:", error);
       res.status(500).json({ error: "Erreur interne du serveur" });
     }
   }
@@ -80,11 +60,7 @@ export class ProfileController {
       const profileType = data?.profile_type;
 
       if (profileType === ProfileType.TIPSTER) {
-        const tipsterData = await TipsterService.buildTipsterWithDetails(
-          data,
-          true
-        );
-        res.status(200).json(tipsterData as Tipster);
+        res.status(200).json(data as Tipster);
         return;
       } else if (profileType === ProfileType.USER) {
         res.status(200).json(data as User);

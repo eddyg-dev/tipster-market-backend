@@ -2,13 +2,6 @@ import { supabase } from "../config/supabase";
 import { TipResult } from "../shared-data/enums/tip-result.enum";
 import { TipStatus } from "../shared-data/enums/tip-status.enum";
 
-export interface TipsterStats {
-  winRate: number;
-  roi: number;
-  totalTips: number;
-  totalEarnings: number;
-}
-
 export class StatsService {
   /**
    * Calcule les statistiques complètes d'un tipster

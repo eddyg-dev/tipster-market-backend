@@ -1,6 +1,6 @@
 export enum OutcomeResult {
-  Right = "Right",
-  Wrong = "Wrong",
-  Cancelled = "Cancelled",
-  Initial = "Initial",
+  Right = "right",
+  Wrong = "wrong",
+  Cancelled = "cancelled",
+  Initial = "initial",
 }

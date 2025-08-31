@@ -5,6 +5,7 @@ import { Tipster } from "./tipster.model";
 
 export interface MatchDetails {
   id: string;
+  match_id?: string;
   sport_key: string;
   sport_title: string;
   commence_time: string;

@@ -1,4 +1,5 @@
-import { ProfileType } from "../enums/profile-type.enum";
+import { ProfileType, SubscriptionLevel } from "../enums";
+import { TipsterStats } from "./tipster-stats.model";
 
 export interface Profile {
   id: string;
@@ -9,4 +10,6 @@ export interface Profile {
   created_at: string;
   updated_at: string;
   profile_introduction_completed: boolean;
+  subscription_level: SubscriptionLevel;
+  stats?: TipsterStats;
 }

@@ -88,12 +88,10 @@ export class OddsApiService {
   }
 
   static async getScores(): Promise<ScoreResponse[]> {
-    const sportKeys = process.env.SOCCER_AUTOMATIC_SPORTS?.split(",");
+    const sportKeys = process.env.SPORTS?.split(",");
     const scores = [];
     if (!sportKeys) {
-      throw new Error(
-        "SOCCER_AUTOMATIC_SPORTS is not defined in environment variables"
-      );
+      throw new Error("SPORTS is not defined in environment variables");
     }
     for (const sportKey of sportKeys) {
       const url = `${ODDS_API_BASE_URL}/sports/${sportKey}/scores?apiKey=${ODDS_API_KEY}&dateFormat=iso&daysFrom=3`;
