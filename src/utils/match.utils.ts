@@ -106,7 +106,9 @@ export class MatchUtils {
         }
       }
     }
-    return outcomes;
+
+    // Trier les outcomes pour placer "Draw" en deuxième position
+    return this.sortOutcomesWithDrawSecond(outcomes);
   }
 
   /**
@@ -142,5 +144,30 @@ export class MatchUtils {
    */
   static filterValidMatches(matchesResponse: MatchResponse[]): MatchResponse[] {
     return matchesResponse.filter((match) => this.isValidMatch(match));
+  }
+
+  /**
+   * Trie les outcomes pour placer "Draw" en deuxième position
+   */
+  private static sortOutcomesWithDrawSecond(outcomes: Outcome[]): Outcome[] {
+    if (outcomes.length <= 2) {
+      return outcomes;
+    }
+
+    // Trouver l'outcome "Draw"
+    const drawOutcome = outcomes.find((outcome) => outcome.name === "Draw");
+    if (!drawOutcome) {
+      return outcomes;
+    }
+
+    // Filtrer les autres outcomes
+    const otherOutcomes = outcomes.filter((outcome) => outcome.name !== "Draw");
+
+    // Placer "Draw" en deuxième position
+    if (otherOutcomes.length >= 1) {
+      return [otherOutcomes[0], drawOutcome, ...otherOutcomes.slice(1)];
+    }
+
+    return outcomes;
   }
 }

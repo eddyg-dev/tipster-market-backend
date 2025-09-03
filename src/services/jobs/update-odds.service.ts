@@ -40,34 +40,27 @@ export class UpdateOddsService {
       if (matches.length > 0) {
         const dbStartTime = Date.now();
 
-        // Mettre à jour uniquement les scores pour les matchs existants
-        const matchesWithScores = matches.filter((match) => match.scores);
+        // Insérer ou mettre à jour les matchs
+        const { error: upsertError } = await supabase
+          .from("matches")
+          .upsert(matches, {
+            onConflict: "match_id",
+            ignoreDuplicates: false,
+          });
 
-        if (matchesWithScores.length > 0) {
-          let updatedCount = 0;
-
-          for (const match of matchesWithScores) {
-            const { error: updateError } = await supabase
-              .from("matches")
-              .update({ scores: match.scores })
-              .eq("match_id", match.match_id);
-
-            if (updateError) {
-              console.error(
-                `Erreur mise à jour scores pour ${match.match_id}:`,
-                updateError
-              );
-            } else {
-              updatedCount++;
-            }
-          }
-
-          const dbTime = Date.now() - dbStartTime;
-          console.log(`💾 Temps DB: ${dbTime}ms`);
-          console.log(`${updatedCount} scores mis à jour avec succès`);
+        if (upsertError) {
+          console.error(
+            "Erreur lors de l'insertion/mise à jour des matchs:",
+            upsertError
+          );
         } else {
-          console.log("Aucun score à mettre à jour");
+          console.log(
+            `${matches.length} matchs insérés/mis à jour avec succès`
+          );
         }
+
+        const dbTime = Date.now() - dbStartTime;
+        console.log(`💾 Temps DB: ${dbTime}ms`);
       }
 
       const totalTime = Date.now() - startTime;
