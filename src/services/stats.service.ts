@@ -1,3 +1,4 @@
+import moment from "moment";
 import { supabase } from "../config/supabase";
 import { TipsterStats } from "../shared-data";
 import { TipResult } from "../shared-data/enums/tip-result.enum";
@@ -17,93 +18,117 @@ export class StatsService {
 
       if (tipsError) throw tipsError;
 
-      const completedTips = tips.filter((tip) => tip.status !== TipStatus);
-      const wonTips = completedTips.filter(
-        (tip) => tip.result === TipResult.WON
+      const completedTips = tips.filter(
+        (tip) => tip.status === TipStatus.HISTORICAL
       );
-      const totalTips = completedTips.length;
-      const winRate = totalTips > 0 ? (wonTips.length / totalTips) * 100 : 0;
+      const activeTips = tips.filter(
+        (tip) => tip.status === TipStatus.IN_PROGRESS
+      );
 
-      // Calculer le ROI
-      let totalInvestment = 0;
-      let totalReturn = 0;
-
-      completedTips.forEach((tip) => {
-        if (tip.result === TipResult.WON) {
-          totalReturn += tip.amount * tip.price;
-        }
-        totalInvestment += tip.amount;
-      });
-
-      const roi =
-        totalInvestment > 0
-          ? ((totalReturn - totalInvestment) / totalInvestment) * 100
-          : 0;
-
-      // Calculer les gains totaux
-      const totalEarnings = completedTips.reduce((sum, tip) => {
-        if (tip.result === TipResult.WON) {
-          return sum + (tip.amount * tip.price - tip.amount);
-        }
-        return sum - tip.amount;
-      }, 0);
+      const winRate = this.calculateWinRate(completedTips);
+      const roi = this.calculateROI(completedTips);
+      const points = await this.calculatePoints(tipsterId, completedTips);
 
       return {
-        win_rate: Math.round(winRate * 100) / 100,
-        roi: Math.round(roi * 100) / 100,
-        rank: 0,
-        tips_count: totalTips,
-        active_tips_count: completedTips.length,
-        points: Math.round(totalEarnings * 100) / 100,
+        win_rate: winRate,
+        roi: roi,
+        tips_count: completedTips.length,
+        odd_average: this.calculateOddAverage(completedTips),
+        active_tips_count: activeTips.length,
+        points: points,
       };
     } catch (error) {
       console.error("Erreur lors du calcul des statistiques:", error);
-      return {
-        active_tips_count: 0,
-        rank: 0,
-        win_rate: 0,
-        roi: 0,
-        tips_count: 0,
-        points: 0,
-      };
+      throw error;
     }
   }
 
   /**
-   * Calcule le classement des tipsters
+   * Calcule le taux de réussite (win rate)
    */
-  static async calculateTipsterRankings(): Promise<any[]> {
+  private static calculateWinRate(completedTips: any[]): number {
+    if (completedTips.length === 0) return 0;
+
+    const wonTips = completedTips.filter((tip) => tip.result === TipResult.WON);
+
+    const winRate = (wonTips.length / completedTips.length) * 100;
+    return Math.round(winRate * 100) / 100;
+  }
+
+  /**
+   * Calcule le ROI (Return on Investment)
+   */
+  private static calculateROI(completedTips: any[]): number {
+    let totalInvestment = 0;
+    let totalReturn = 0;
+
+    completedTips.forEach((tip) => {
+      if (tip.result === TipResult.WON) {
+        totalReturn += tip.amount * tip.price;
+      }
+      totalInvestment += tip.amount;
+    });
+
+    const roi =
+      totalInvestment > 0
+        ? ((totalReturn - totalInvestment) / totalInvestment) * 100
+        : 0;
+
+    return Math.round(roi * 100) / 100;
+  }
+
+  /**
+   * Calcule les points selon le nouveau système :
+   * - 20 points par jour depuis le 01/09/2025
+   * - + gains des pronostics gagnés (montant * cote - mise)
+   * - - mise des pronostics perdus
+   */
+  private static async calculatePoints(
+    tipsterId: string,
+    completedTips: any[]
+  ): Promise<number> {
     try {
-      // Récupérer tous les tipsters
-      const { data: tipsters, error: tipstersError } = await supabase
+      // Récupérer la date de création du tipster
+      const { data: tipster, error: tipsterError } = await supabase
         .from("profiles")
-        .select("id, username, avatar_url")
-        .eq("profile_type", "tipster");
+        .select("created_at")
+        .eq("id", tipsterId)
+        .single();
 
-      if (tipstersError) throw tipstersError;
+      if (tipsterError) throw tipsterError;
 
-      // Calculer les stats pour chaque tipster
-      const tipstersWithStats = await Promise.all(
-        tipsters.map(async (tipster) => {
-          const stats = await this.calculateTipsterStats(tipster.id);
-          return {
-            ...tipster,
-            ...stats,
-          };
-        })
-      );
+      // Calculer les points de base (20 points par jour depuis le 01/08/2025)
+      // Peu importe la date d'inscription du tipster
+      const startDate = moment.utc("2025-09-01");
+      const today = moment.utc();
 
-      // Trier par ROI décroissant
-      return tipstersWithStats
-        .filter((tipster) => tipster.tips_count > 0)
-        .sort((a, b) => b.roi - a.roi)
-        .map((tipster, index) => ({
-          ...tipster,
-          rank: index + 1,
-        }));
+      const daysSinceStart = today.diff(startDate, "days");
+      const basePoints = Math.max(0, daysSinceStart * 10);
+
+      // Calculer les points des pronostics
+      const tipsPoints = completedTips.reduce((sum, tip) => {
+        if (tip.result === TipResult.WON) {
+          // Gains = (montant * cote) - mise
+          const gains = tip.amount * tip.price - tip.amount;
+          return sum + gains;
+        } else if (tip.result === TipResult.LOST) {
+          // Perte = mise
+          return sum - tip.amount;
+        }
+        return sum;
+      }, 0);
+
+      const totalPoints = basePoints + tipsPoints;
+      return Math.round(totalPoints * 100) / 100;
     } catch (error) {
-      console.error("Erreur lors du calcul des classements:", error);
-      return [];
+      console.error("Erreur lors du calcul des points:", error);
+      return 0;
     }
+  }
+
+  private static calculateOddAverage(completedTips: any[]): number {
+    if (completedTips.length === 0) return 0;
+    const totalOdd = completedTips.reduce((sum, tip) => sum + tip.price, 0);
+    return Math.round((totalOdd / completedTips.length) * 100) / 100;
   }
 }

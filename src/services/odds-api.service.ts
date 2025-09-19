@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import { supabase } from "../config/supabase";
 import { Market } from "../shared-data/enums/market.enum";
 import { Region } from "../shared-data/enums/region.enum";
 import { MatchResponse } from "../shared-data/models/odds-api-response/match-response.model";
@@ -88,11 +89,18 @@ export class OddsApiService {
   }
 
   static async getScores(): Promise<ScoreResponse[]> {
-    const sportKeys = process.env.SPORTS?.split(",");
-    const scores = [];
+    const sportKeys = process.env.SPORT_KEYS?.split(",");
     if (!sportKeys) {
-      throw new Error("SPORTS is not defined in environment variables");
+      throw new Error("SPORT_KEYS is not defined in environment variables");
     }
+    const { data: sports, error: sportsError } = await supabase
+      .from("sports")
+      .select("*")
+      .in("key", sportKeys);
+    if (sportsError) {
+      throw sportsError;
+    }
+    const scores = [];
     for (const sportKey of sportKeys) {
       const url = `${ODDS_API_BASE_URL}/sports/${sportKey}/scores?apiKey=${ODDS_API_KEY}&dateFormat=iso&daysFrom=3`;
       const response = await fetch(url);

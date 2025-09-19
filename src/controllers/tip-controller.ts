@@ -56,22 +56,48 @@ export class TipController {
   }
 
   static async getTips(req: Request, res: Response): Promise<void> {
-    const { data: tipsData, error: tipsError } = await supabase
-      .from("tips")
-      .select("*")
-      .order("created_at", { ascending: true });
+    try {
+      const { data: tipsData, error: tipsError } = await supabase
+        .from("tips")
+        .select("*")
+        .order("created_at", { ascending: true });
 
-    if (tipsError) {
-      res.status(500).json({ error: tipsError.message });
-      return;
+      if (tipsError) {
+        res.status(500).json({ error: tipsError.message });
+        return;
+      }
+
+      const matchesMap = await MatchService.getMatchesMap();
+      const enrichedTips = await Promise.all(
+        tipsData.map(async (tip) => {
+          const enrichedTip = await TipService.enrichTip(
+            tip as unknown as Tip,
+            matchesMap
+          );
+
+          // Récupérer les informations du tipster
+          const { data: tipsterData, error: tipsterError } = await supabase
+            .from("profiles")
+            .select("id, username, avatar_url")
+            .eq("id", tip.tipster_id)
+            .single();
+
+          if (!tipsterError && tipsterData) {
+            return {
+              ...enrichedTip,
+              tipster: tipsterData,
+            };
+          }
+
+          return enrichedTip;
+        })
+      );
+
+      res.status(200).json(enrichedTips);
+    } catch (error) {
+      console.error("Erreur lors de la récupération des tips:", error);
+      res.status(500).json({ error: "Erreur interne du serveur" });
     }
-    const matchesMap = await MatchService.getMatchesMap();
-    const enrichedTips = await Promise.all(
-      tipsData.map(async (tip) => {
-        return TipService.enrichTip(tip as unknown as Tip, matchesMap);
-      })
-    );
-    res.status(200).json(enrichedTips);
   }
 
   static async getTip(req: Request, res: Response): Promise<void> {

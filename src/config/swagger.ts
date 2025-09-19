@@ -4,7 +4,7 @@ const options: swaggerJsdoc.Options = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "Tipster Market API",
+      title: "Prono d'Or API",
       version: "1.0.0",
       description: "API pour la gestion des pronostics sportifs",
     },

@@ -35,7 +35,13 @@ export class TipService {
     const isWon = selectedOutcomesWithResults.every(
       (outcome: Outcome) => outcome.result === OutcomeResult.Right
     );
-    const status = isFullChecked ? TipStatus.HISTORICAL : TipStatus.IN_PROGRESS;
+
+    const isDeadlineReached = moment(tip.deadline).isBefore(moment());
+
+    const status =
+      isFullChecked || isDeadlineReached
+        ? TipStatus.HISTORICAL
+        : TipStatus.IN_PROGRESS;
     const result = isFullChecked
       ? isWon
         ? TipResult.WON

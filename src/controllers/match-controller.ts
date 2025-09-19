@@ -11,7 +11,6 @@ export class MatchController {
       // Calculer les dates pour la semaine à venir avec Moment
       const now = moment(); // À partir de maintenant
       const endOfDayIn7Days = moment().add(7, "days").endOf("day");
-
       const { data: matches, error: matchesError } = await supabase
         .from("matches")
         .select("*")

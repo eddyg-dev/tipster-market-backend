@@ -1,6 +1,7 @@
 import { User } from "@supabase/supabase-js";
 import { Request, Response } from "express";
 import { supabase } from "../config/supabase";
+import { StatsService } from "../services/stats.service";
 import { ProfileType } from "../shared-data/enums/profile-type.enum";
 import { SubscriptionLevel } from "../shared-data/enums/subscription-level.enum";
 import { Profile } from "../shared-data/models/profile.model";
@@ -37,8 +38,21 @@ export class ProfileController {
         res.status(500).json({ error: error.message });
         return;
       }
-      res.status(200).json(tipsters);
+
+      // Ajouter les statistiques pour chaque tipster
+      const tipstersWithStats = await Promise.all(
+        tipsters.map(async (tipster) => {
+          const stats = await StatsService.calculateTipsterStats(tipster.id);
+          return {
+            ...tipster,
+            stats: stats,
+          };
+        })
+      );
+
+      res.status(200).json(tipstersWithStats);
     } catch (error) {
+      console.error("Erreur lors de la récupération des tipsters:", error);
       res.status(500).json({ error: "Erreur interne du serveur" });
     }
   }
@@ -60,7 +74,13 @@ export class ProfileController {
       const profileType = data?.profile_type;
 
       if (profileType === ProfileType.TIPSTER) {
-        res.status(200).json(data as Tipster);
+        // Ajouter les statistiques pour les tipsters
+        const stats = await StatsService.calculateTipsterStats(id);
+        const tipsterWithStats = {
+          ...data,
+          stats: stats,
+        };
+        res.status(200).json(tipsterWithStats as Tipster);
         return;
       } else if (profileType === ProfileType.USER) {
         res.status(200).json(data as User);
@@ -76,12 +96,37 @@ export class ProfileController {
 
   static async getTipsterById(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", id)
-      .single();
-    res.status(200).json(data as Profile);
+
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) {
+        res.status(404).json({ error: "Tipster non trouvé" });
+        return;
+      }
+
+      // Vérifier que c'est bien un tipster
+      if (data.profile_type !== ProfileType.TIPSTER) {
+        res.status(400).json({ error: "Le profil n'est pas un tipster" });
+        return;
+      }
+
+      // Ajouter les statistiques
+      const stats = await StatsService.calculateTipsterStats(id);
+      const tipsterWithStats = {
+        ...data,
+        stats: stats,
+      };
+
+      res.status(200).json(tipsterWithStats);
+    } catch (error) {
+      console.error("Erreur lors de la récupération du tipster:", error);
+      res.status(500).json({ error: "Erreur interne du serveur" });
+    }
   }
 
   static async saveProfileIntroduction(
