@@ -1,4 +1,3 @@
-export * from "./match.model";
 export * from "./odds-api-response";
 export * from "./outcome.model";
 export * from "./profile.model";
