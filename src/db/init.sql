@@ -66,10 +66,21 @@ create table sports (
   "group" text,
   title text not null,
   description text,
+  flag text,
+  icon text,
   active boolean default true,
+  priority integer default 2,
   has_outrights boolean default false
 );
 
+
+-- Create foreign key constraints
+alter table matches 
+add constraint fk_matches_sport_key 
+foreign key (sport_key) 
+references sports(key) 
+on delete cascade 
+on update cascade;
 
 -- Create indexes
 create index idx_matches_commence_time on matches(commence_time);

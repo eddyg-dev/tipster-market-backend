@@ -27,7 +27,7 @@ export class StatsService {
 
       const winRate = this.calculateWinRate(completedTips);
       const roi = this.calculateROI(completedTips);
-      const points = await this.calculatePoints(tipsterId, completedTips);
+      const points = await this.calculatePoints(tipsterId, tips);
 
       return {
         win_rate: winRate,
@@ -79,13 +79,13 @@ export class StatsService {
 
   /**
    * Calcule les points selon le nouveau système :
-   * - 20 points par jour depuis le 01/09/2025
-   * - + gains des pronostics gagnés (montant * cote - mise)
-   * - - mise des pronostics perdus
+   * - 10 points par jour depuis le 01/09/2025
+   * - - mise de tous les tips (actifs et terminés) dès la création
+   * - + gains des pronostics gagnés (montant * cote) seulement si terminé et gagné
    */
   private static async calculatePoints(
     tipsterId: string,
-    completedTips: any[]
+    allTips: any[]
   ): Promise<number> {
     try {
       // Récupérer la date de création du tipster
@@ -106,16 +106,26 @@ export class StatsService {
       const basePoints = Math.max(0, daysSinceStart * 10);
 
       // Calculer les points des pronostics
-      const tipsPoints = completedTips.reduce((sum, tip) => {
-        if (tip.result === TipResult.WON) {
-          // Gains = (montant * cote) - mise
-          const gains = tip.amount * tip.price - tip.amount;
-          return sum + gains;
-        } else if (tip.result === TipResult.LOST) {
-          // Perte = mise
-          return sum - tip.amount;
+      // Logique : On soustrait toujours la mise, puis on ajoute les gains si gagné
+      // Exemple : Tip de 10€ à 2.5 cotes
+      // - Gagné : -10€ (mise) + 25€ (gains) = +15€
+      // - Perdu : -10€ (mise) + 0€ = -10€
+      // - Actif : -10€ (mise) + 0€ = -10€ (pas encore de résultat)
+      const tipsPoints = allTips.reduce((sum, tip) => {
+        // On soustrait toujours la mise (coût du tip) dès la création
+        let tipResult = -tip.amount;
+
+        // Seulement pour les tips terminés, on ajoute les gains si gagné
+        if (
+          tip.status === TipStatus.HISTORICAL &&
+          tip.result === TipResult.WON
+        ) {
+          // Si gagné, on ajoute les gains (montant * cote)
+          tipResult += tip.amount * tip.price;
         }
-        return sum;
+        // Pour les tips actifs ou perdus, on garde seulement la soustraction de la mise
+
+        return sum + tipResult;
       }, 0);
 
       const totalPoints = basePoints + tipsPoints;

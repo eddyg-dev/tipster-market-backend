@@ -1,8 +1,8 @@
 import { supabase } from "../config/supabase";
-import { Match } from "../shared-data/models/match.model";
+import { MatchResponse } from "../shared-data";
 
 export class MatchService {
-  static async getMatchesMap(): Promise<Map<string, Match>> {
+  static async getMatchesMap(): Promise<Map<string, MatchResponse>> {
     const { data: matches, error: matchesError } = await supabase
       .from("matches")
       .select("*");
@@ -11,7 +11,7 @@ export class MatchService {
       throw matchesError;
     }
 
-    const matchesMap = new Map<string, Match>();
+    const matchesMap = new Map<string, MatchResponse>();
     matches.forEach((match) => {
       if (match.match_id) {
         matchesMap.set(match.match_id, match);

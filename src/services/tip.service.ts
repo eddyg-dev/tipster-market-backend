@@ -1,5 +1,5 @@
 import moment from "moment";
-import { Match } from "../shared-data";
+import { MatchResponse } from "../shared-data";
 import { OutcomeResult } from "../shared-data/enums/outcome-result.enum";
 import { TipResult } from "../shared-data/enums/tip-result.enum";
 import { TipStatus } from "../shared-data/enums/tip-status.enum";
@@ -9,7 +9,7 @@ import { Tip } from "../shared-data/models/tip.model";
 export class TipService {
   static async enrichTip(
     tip: Tip,
-    matchesMap: Map<string, Match>
+    matchesMap: Map<string, MatchResponse>
   ): Promise<Tip> {
     const tipWithOutcomeResults = this.addOutcomeResults(
       tip.selected_outcomes,
@@ -56,7 +56,7 @@ export class TipService {
 
   private static addOutcomeResults(
     selectedOutcomes: Outcome[],
-    matchesMap: Map<string, Match>
+    matchesMap: Map<string, MatchResponse>
   ): Outcome[] {
     const selectedOutcomesWithResults: Outcome[] = [];
     if (Array.isArray(selectedOutcomes)) {

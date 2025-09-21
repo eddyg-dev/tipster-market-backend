@@ -63,10 +63,10 @@ export class MatchUtils {
     return {
       id: match.match_id || match.id,
       sport_key: match.sport_key,
-      sport_title: this.getSportTitle(match.sport_key),
       commence_time: match.commence_time || match.date,
       home_team: match.home_team,
       away_team: match.away_team,
+      sport: { ...match.sport, title: this.getSportTitle(match.sport_key) },
       bookmakers: [
         {
           key: "supabase",
@@ -121,6 +121,7 @@ export class MatchUtils {
       soccer_spain_la_liga: "La Liga",
       soccer_germany_bundesliga: "Bundesliga",
       soccer_italy_serie_a: "Serie A",
+      soccer_italy_serie_b: "Serie B",
     };
 
     return sportTitles[sportKey] || sportKey;

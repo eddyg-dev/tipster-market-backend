@@ -8,7 +8,7 @@ export class UpdateOddsService {
   static async execute() {
     const startTime = Date.now();
     try {
-      const sports = process.env.SPORTS?.split(",") || [];
+      const sports = process.env.SPORTS_KEYS?.split(",") || [];
       if (sports.length === 0) {
         return {
           success: false,
