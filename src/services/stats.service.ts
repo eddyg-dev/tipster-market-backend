@@ -1,8 +1,6 @@
 import moment from "moment";
 import { supabase } from "../config/supabase";
-import { TipsterStats } from "../shared-data";
-import { TipResult } from "../shared-data/enums/tip-result.enum";
-import { TipStatus } from "../shared-data/enums/tip-status.enum";
+import { Outcome, OutcomeResult, TipsterStats } from "../shared-data";
 
 export class StatsService {
   /**
@@ -18,23 +16,31 @@ export class StatsService {
 
       if (tipsError) throw tipsError;
 
-      const completedTips = tips.filter(
-        (tip) => tip.status === TipStatus.HISTORICAL
-      );
-      const activeTips = tips.filter(
-        (tip) => tip.status === TipStatus.IN_PROGRESS
-      );
+      const checkedTips = tips.filter((tip) => {
+        const isFullChecked = tip.selected_outcomes.every(
+          (outcome: Outcome) => outcome.result !== OutcomeResult.Initial
+        );
+        return isFullChecked;
+      });
 
-      const winRate = this.calculateWinRate(completedTips);
-      const roi = this.calculateROI(completedTips);
-      const points = await this.calculatePoints(tipsterId, tips);
+      const notCheckedTips = tips.filter((tip) => {
+        const isFullChecked = tip.selected_outcomes.every(
+          (outcome: Outcome) => outcome.result !== OutcomeResult.Initial
+        );
+        return !isFullChecked;
+      });
+
+      const winRate = this.calculateWinRate(checkedTips);
+      const roi = this.calculateROI(checkedTips);
+      const points = await this.calculatePoints(tipsterId, checkedTips); // Utiliser tous les tips pour les points
 
       return {
         win_rate: winRate,
         roi: roi,
-        tips_count: completedTips.length,
-        odd_average: this.calculateOddAverage(completedTips),
-        active_tips_count: activeTips.length,
+        tips_count: checkedTips.length,
+        odd_average: this.calculateOddAverage(checkedTips),
+        active_tips_count: notCheckedTips.length,
+        total_tips_count: tips.length,
         points: points,
       };
     } catch (error) {
@@ -46,24 +52,35 @@ export class StatsService {
   /**
    * Calcule le taux de réussite (win rate)
    */
-  private static calculateWinRate(completedTips: any[]): number {
-    if (completedTips.length === 0) return 0;
+  private static calculateWinRate(checkedTips: any[]): number {
+    if (checkedTips.length === 0) return 0;
 
-    const wonTips = completedTips.filter((tip) => tip.result === TipResult.WON);
+    const wonTips = checkedTips.filter((tip) => {
+      // Un tip est gagné si tous les outcomes sont "right"
+      return tip.selected_outcomes.every(
+        (outcome: Outcome) => outcome.result === OutcomeResult.Right
+      );
+    });
 
-    const winRate = (wonTips.length / completedTips.length) * 100;
-    return Math.round(winRate * 100) / 100;
+    let winRate = (wonTips.length / checkedTips.length) * 100;
+    winRate = parseFloat(winRate.toFixed(2));
+    return winRate;
   }
 
   /**
    * Calcule le ROI (Return on Investment)
    */
-  private static calculateROI(completedTips: any[]): number {
+  private static calculateROI(checkedTips: any[]): number {
     let totalInvestment = 0;
     let totalReturn = 0;
 
-    completedTips.forEach((tip) => {
-      if (tip.result === TipResult.WON) {
+    checkedTips.forEach((tip) => {
+      // Vérifier si le tip est gagné (tous les outcomes sont "right")
+      const isWon = tip.selected_outcomes.every(
+        (outcome: Outcome) => outcome.result === OutcomeResult.Right
+      );
+
+      if (isWon) {
         totalReturn += tip.amount * tip.price;
       }
       totalInvestment += tip.amount;
@@ -74,7 +91,7 @@ export class StatsService {
         ? ((totalReturn - totalInvestment) / totalInvestment) * 100
         : 0;
 
-    return Math.round(roi * 100) / 100;
+    return parseFloat(roi.toFixed(2));
   }
 
   /**
@@ -115,21 +132,23 @@ export class StatsService {
         // On soustrait toujours la mise (coût du tip) dès la création
         let tipResult = -tip.amount;
 
-        // Seulement pour les tips terminés, on ajoute les gains si gagné
-        if (
-          tip.status === TipStatus.HISTORICAL &&
-          tip.result === TipResult.WON
-        ) {
+        // Vérifier si le tip est gagné (tous les outcomes sont "right")
+        const isWon = tip.selected_outcomes.every(
+          (outcome: Outcome) => outcome.result === OutcomeResult.Right
+        );
+
+        // Seulement pour les tips vérifiés ET gagnés, on ajoute les gains
+        if (isWon) {
           // Si gagné, on ajoute les gains (montant * cote)
           tipResult += tip.amount * tip.price;
         }
-        // Pour les tips actifs ou perdus, on garde seulement la soustraction de la mise
+        // Pour les tips perdus ou non vérifiés, on garde seulement la soustraction de la mise
 
         return sum + tipResult;
       }, 0);
 
       const totalPoints = basePoints + tipsPoints;
-      return Math.round(totalPoints * 100) / 100;
+      return Math.round(totalPoints);
     } catch (error) {
       console.error("Erreur lors du calcul des points:", error);
       return 0;
@@ -138,7 +157,17 @@ export class StatsService {
 
   private static calculateOddAverage(completedTips: any[]): number {
     if (completedTips.length === 0) return 0;
-    const totalOdd = completedTips.reduce((sum, tip) => sum + tip.price, 0);
-    return Math.round((totalOdd / completedTips.length) * 100) / 100;
+
+    // Filtrer uniquement les tips gagnants
+    const winningTips = completedTips.filter((tip) => {
+      return tip.selected_outcomes.every(
+        (outcome: Outcome) => outcome.result === OutcomeResult.Right
+      );
+    });
+
+    if (winningTips.length === 0) return 0;
+
+    const totalOdd = winningTips.reduce((sum, tip) => sum + tip.price, 0);
+    return parseFloat((totalOdd / winningTips.length).toFixed(2));
   }
 }

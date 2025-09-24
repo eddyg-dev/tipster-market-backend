@@ -9,7 +9,11 @@
     "build": "tsc",
     "update-odds": "ts-node scripts/update-odds.ts",
     "update-sports": "ts-node scripts/update-sports.ts",
-    "check-scores": "ts-node scripts/check-scores.ts"
+    "update-scores": "ts-node scripts/update-scores.ts",
+    "debug-scores": "ts-node scripts/debug-scores.ts",
+    "check-trigger": "ts-node scripts/check-trigger.ts",
+    "update-tip-outcomes": "ts-node scripts/update-tip-outcomes.ts",
+    "test-odd-average": "ts-node scripts/test-odd-average.ts"
   },
   "keywords": [],
   "author": "",

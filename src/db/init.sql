@@ -56,7 +56,6 @@ create table tips (
   deadline timestamp with time zone not null,
   status tip_status default 'in_progress' not null,
   result tip_result default 'initial' not null,
-  is_checked boolean default false not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 

@@ -89,10 +89,11 @@ export class OddsApiService {
   }
 
   static async getScores(): Promise<ScoreResponse[]> {
-    const sportKeys = process.env.SPORT_KEYS?.split(",");
+    const sportKeys = process.env.SPORTS_KEYS?.split(",");
     if (!sportKeys) {
-      throw new Error("SPORT_KEYS is not defined in environment variables");
+      throw new Error("SPORTS_KEYS is not defined in environment variables");
     }
+    console.log("Sports à traiter:", sportKeys);
     const { data: sports, error: sportsError } = await supabase
       .from("sports")
       .select("*")

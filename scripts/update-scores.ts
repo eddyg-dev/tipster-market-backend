@@ -14,7 +14,7 @@
  * ou npm run process-results pour tout traiter.
  */
 import dotenv from "dotenv";
-import { CheckScoresService } from "../src/services/jobs";
+import { UpdateScoresService } from "../src/services/jobs";
 
 // Charge les variables d'environnement
 dotenv.config();
@@ -24,7 +24,7 @@ async function main() {
 
   try {
     // Exécute le service de vérification des scores
-    const result = await CheckScoresService.execute();
+    const result = await UpdateScoresService.execute();
 
     if (result.success) {
       console.log("✅ Succès:", result.message);
