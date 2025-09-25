@@ -29,8 +29,12 @@ export class MatchUtils {
    * Transforme un MatchResponse de l'API vers le format de la base de données
    */
   static mapApiMatchToDatabase(matchResponse: MatchResponse): DatabaseMatch {
-    // Extraire les outcomes des bookmakers
-    let outcomes = this.extractOutcomesFromBookmakers(matchResponse.bookmakers);
+    // Extraire les outcomes des bookmakers avec les noms des équipes pour le tri
+    let outcomes = this.extractOutcomesFromBookmakers(
+      matchResponse.bookmakers,
+      matchResponse.home_team,
+      matchResponse.away_team
+    );
     outcomes = outcomes.filter((outcome) => {
       return process.env.OUTCOME_TYPES?.split(",").includes(outcome.type);
     });
@@ -87,7 +91,11 @@ export class MatchUtils {
   /**
    * Extrait les outcomes des bookmakers de l'API
    */
-  private static extractOutcomesFromBookmakers(bookmakers: any[]): Outcome[] {
+  private static extractOutcomesFromBookmakers(
+    bookmakers: any[],
+    homeTeam?: string,
+    awayTeam?: string
+  ): Outcome[] {
     const outcomes: Outcome[] = [];
     const bookmarkerChoice = process.env.BOOKMARKER;
     let bookmarker = bookmakers.find(
@@ -108,7 +116,7 @@ export class MatchUtils {
     }
 
     // Trier les outcomes pour placer "Draw" en deuxième position
-    return this.sortOutcomesWithDrawSecond(outcomes);
+    return this.sortOutcomesWithDrawSecond(outcomes, homeTeam, awayTeam);
   }
 
   /**
@@ -148,27 +156,63 @@ export class MatchUtils {
   }
 
   /**
-   * Trie les outcomes pour placer "Draw" en deuxième position
+   * Trie les outcomes dans l'ordre : home team (1er), draw (2ème), away team (3ème)
    */
-  private static sortOutcomesWithDrawSecond(outcomes: Outcome[]): Outcome[] {
+  private static sortOutcomesWithDrawSecond(
+    outcomes: Outcome[],
+    homeTeam?: string,
+    awayTeam?: string
+  ): Outcome[] {
     if (outcomes.length <= 2) {
       return outcomes;
     }
 
-    // Trouver l'outcome "Draw"
+    // Trouver les outcomes par correspondance avec les noms des équipes
     const drawOutcome = outcomes.find((outcome) => outcome.name === "Draw");
-    if (!drawOutcome) {
+
+    // Trouver l'outcome de l'équipe à domicile
+    const homeOutcome = homeTeam
+      ? outcomes.find(
+          (outcome) =>
+            outcome.name !== "Draw" && outcome.name.includes(homeTeam)
+        )
+      : null;
+
+    // Trouver l'outcome de l'équipe à l'extérieur
+    const awayOutcome = awayTeam
+      ? outcomes.find(
+          (outcome) =>
+            outcome.name !== "Draw" &&
+            outcome.name !== homeOutcome?.name &&
+            outcome.name.includes(awayTeam)
+        )
+      : null;
+
+    // Si on ne peut pas identifier clairement home/away, utiliser l'ordre original mais avec Draw en 2ème
+    if (!homeOutcome || !awayOutcome) {
+      const otherOutcomes = outcomes.filter(
+        (outcome) => outcome.name !== "Draw"
+      );
+      if (drawOutcome && otherOutcomes.length >= 1) {
+        return [otherOutcomes[0], drawOutcome, ...otherOutcomes.slice(1)];
+      }
       return outcomes;
     }
 
-    // Filtrer les autres outcomes
-    const otherOutcomes = outcomes.filter((outcome) => outcome.name !== "Draw");
+    // Ordre spécifique : home team, draw, away team
+    const sortedOutcomes = [];
+    if (homeOutcome) sortedOutcomes.push(homeOutcome);
+    if (drawOutcome) sortedOutcomes.push(drawOutcome);
+    if (awayOutcome) sortedOutcomes.push(awayOutcome);
 
-    // Placer "Draw" en deuxième position
-    if (otherOutcomes.length >= 1) {
-      return [otherOutcomes[0], drawOutcome, ...otherOutcomes.slice(1)];
-    }
+    // Ajouter les autres outcomes non identifiés à la fin
+    const remainingOutcomes = outcomes.filter(
+      (outcome) =>
+        outcome !== homeOutcome &&
+        outcome !== drawOutcome &&
+        outcome !== awayOutcome
+    );
 
-    return outcomes;
+    return [...sortedOutcomes, ...remainingOutcomes];
   }
 }
