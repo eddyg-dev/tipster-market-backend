@@ -6,4 +6,3 @@ export * from "./region.enum";
 export * from "./sport-group.key.enum";
 export * from "./subscription-level.enum";
 export * from "./tip-result.enum";
-export * from "./tip-status.enum";

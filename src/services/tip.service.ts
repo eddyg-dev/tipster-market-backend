@@ -2,7 +2,6 @@ import moment from "moment";
 import { MatchResponse } from "../shared-data";
 import { OutcomeResult } from "../shared-data/enums/outcome-result.enum";
 import { TipResult } from "../shared-data/enums/tip-result.enum";
-import { TipStatus } from "../shared-data/enums/tip-status.enum";
 import { Outcome } from "../shared-data/models/outcome.model";
 import { Tip } from "../shared-data/models/tip.model";
 
@@ -38,10 +37,6 @@ export class TipService {
 
     const isDeadlineReached = moment(tip.deadline).isBefore(moment());
 
-    const status =
-      isFullChecked || isDeadlineReached
-        ? TipStatus.HISTORICAL
-        : TipStatus.IN_PROGRESS;
     const result = isFullChecked
       ? isWon
         ? TipResult.WON
@@ -49,7 +44,6 @@ export class TipService {
       : TipResult.INITIAL;
     return {
       ...tip,
-      status,
       result,
     };
   }

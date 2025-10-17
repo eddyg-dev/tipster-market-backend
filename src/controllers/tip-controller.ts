@@ -3,7 +3,6 @@ import { supabase } from "../config/supabase";
 import { MatchService } from "../services/match.service";
 import { TipService } from "../services/tip.service";
 import { TipResult } from "../shared-data/enums/tip-result.enum";
-import { TipStatus } from "../shared-data/enums/tip-status.enum";
 import { Tip } from "../shared-data/models/tip.model";
 
 export class TipController {
@@ -38,7 +37,6 @@ export class TipController {
         price,
         analysis,
         deadline,
-        status: TipStatus.IN_PROGRESS,
         result: TipResult.INITIAL,
       });
 

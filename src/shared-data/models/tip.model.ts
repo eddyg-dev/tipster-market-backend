@@ -1,5 +1,4 @@
 import { TipResult } from "../enums/tip-result.enum";
-import { TipStatus } from "../enums/tip-status.enum";
 import { Outcome } from "./outcome.model";
 import { Tipster } from "./tipster.model";
 
@@ -21,7 +20,6 @@ export interface Tip {
   price: number;
   deadline: string;
   created_at: string;
-  status: TipStatus;
   result: TipResult;
   analysis?: string;
   tipster?: Tipster;

@@ -18,7 +18,6 @@ export class ProfileController {
       }
       res.status(200).json(data as Profile[]);
     } catch (error) {
-      console.error("Erreur lors de la récupération des profils:", error);
       res.status(500).json({ error: "Erreur interne du serveur" });
     }
   }
@@ -52,7 +51,6 @@ export class ProfileController {
 
       res.status(200).json(tipstersWithStats);
     } catch (error) {
-      console.error("Erreur lors de la récupération des tipsters:", error);
       res.status(500).json({ error: "Erreur interne du serveur" });
     }
   }

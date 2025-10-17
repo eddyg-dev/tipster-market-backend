@@ -84,6 +84,54 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Fonction pour normaliser les noms d'outcomes
+CREATE OR REPLACE FUNCTION normalize_outcome_name(outcome_name text)
+RETURNS text AS $$
+BEGIN
+    -- Normaliser les noms d'outcomes pour la comparaison
+    RETURN LOWER(TRIM(outcome_name));
+END;
+$$ LANGUAGE plpgsql;
+
+-- Fonction pour vérifier si un outcome correspond au résultat du match
+CREATE OR REPLACE FUNCTION outcome_matches_result(outcome_name text, match_result text, home_team text, away_team text)
+RETURNS boolean AS $$
+DECLARE
+    normalized_outcome text;
+    normalized_result text;
+BEGIN
+    normalized_outcome := normalize_outcome_name(outcome_name);
+    normalized_result := normalize_outcome_name(match_result);
+    
+    -- Vérifier les correspondances directes
+    IF normalized_outcome = normalized_result THEN
+        RETURN true;
+    END IF;
+    
+    -- Vérifier les correspondances pour les matchs nuls
+    IF match_result = 'draw' THEN
+        RETURN normalized_outcome IN ('draw', 'nul', 'match nul', 'égalité', 'tie', 'x');
+    END IF;
+    
+    -- Vérifier les correspondances pour les équipes
+    IF match_result = home_team THEN
+        RETURN normalized_outcome IN (
+            normalize_outcome_name(home_team),
+            '1', 'home', 'domicile', 'local'
+        );
+    END IF;
+    
+    IF match_result = away_team THEN
+        RETURN normalized_outcome IN (
+            normalize_outcome_name(away_team),
+            '2', 'away', 'extérieur', 'visiteur'
+        );
+    END IF;
+    
+    RETURN false;
+END;
+$$ LANGUAGE plpgsql;
+
 -- Fonction pour mettre à jour les scores avec les résultats des outcomes
 CREATE OR REPLACE FUNCTION update_match_outcomes()
 RETURNS trigger AS $$
@@ -129,7 +177,12 @@ BEGIN
                     'result', CASE 
                         WHEN (outcome->>'type') = 'h2h' THEN
                             CASE 
-                                WHEN (outcome->>'name') = match_result THEN 'right'
+                                WHEN outcome_matches_result(
+                                    outcome->>'name', 
+                                    match_result, 
+                                    NEW.home_team, 
+                                    NEW.away_team
+                                ) THEN 'right'
                                 ELSE 'wrong'
                             END
                         -- Ajouter d'autres types d'outcomes si nécessaire
