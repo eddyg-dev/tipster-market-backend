@@ -1,9 +1,7 @@
 import { Request, Response } from "express";
 import { supabase } from "../config/supabase";
-import { MatchService } from "../services/match.service";
 import { TipService } from "../services/tip.service";
 import { TipResult } from "../shared-data/enums/tip-result.enum";
-import { Tip } from "../shared-data/models/tip.model";
 
 export class TipController {
   /**
@@ -65,15 +63,8 @@ export class TipController {
         return;
       }
 
-      const matchesMap = await MatchService.getMatchesMap();
       const enrichedTips = await Promise.all(
         tipsData.map(async (tip) => {
-          const enrichedTip = await TipService.enrichTip(
-            tip as unknown as Tip,
-            matchesMap
-          );
-
-          // Récupérer les informations du tipster
           const { data: tipsterData, error: tipsterError } = await supabase
             .from("profiles")
             .select("id, username, avatar_url")
@@ -82,12 +73,12 @@ export class TipController {
 
           if (!tipsterError && tipsterData) {
             return {
-              ...enrichedTip,
+              ...tip,
               tipster: tipsterData,
             };
           }
 
-          return enrichedTip;
+          return tip;
         })
       );
 
@@ -112,14 +103,7 @@ export class TipController {
       return;
     }
 
-    const matchesMap = await MatchService.getMatchesMap();
-    const enrichedTip = await TipService.enrichTip(
-      tip as unknown as Tip,
-      matchesMap
-    );
-    console.log(enrichedTip);
-
-    res.status(200).json(enrichedTip);
+    res.status(200).json(tip);
   }
 
   static async getTipsByTipsterId(req: Request, res: Response): Promise<void> {
@@ -134,12 +118,7 @@ export class TipController {
       res.status(500).json({ error: tipsError.message });
       return;
     }
-    const matchesMap = await MatchService.getMatchesMap();
-    const enrichedTips = await Promise.all(
-      tipsData.map(async (tip) => {
-        return TipService.enrichTip(tip as unknown as Tip, matchesMap);
-      })
-    );
-    res.status(200).json(enrichedTips);
+
+    res.status(200).json(tipsData);
   }
 }

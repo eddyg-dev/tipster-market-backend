@@ -56,9 +56,10 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION calculate_match_result(scores jsonb, home_team text, away_team text)
 RETURNS text AS $$
 DECLARE
-    first_score integer;
-    second_score integer;
+    home_score integer;
+    away_score integer;
     scores_array jsonb;
+    score_item jsonb;
 BEGIN
     -- Vérifier si les scores sont dans la nouvelle structure ou l'ancienne
     IF scores ? 'scores' THEN
@@ -69,14 +70,26 @@ BEGIN
         scores_array := scores;
     END IF;
     
-    -- Extraire les scores
-    first_score := (scores_array->0->>'score')::integer;
-    second_score := (scores_array->1->>'score')::integer;
+    -- Initialiser les scores
+    home_score := 0;
+    away_score := 0;
+    
+    -- Parcourir les scores pour trouver les scores des équipes
+    FOR score_item IN SELECT * FROM jsonb_array_elements(scores_array)
+    LOOP
+        -- Vérifier si c'est l'équipe à domicile
+        IF normalize_outcome_name(score_item->>'name') = normalize_outcome_name(home_team) THEN
+            home_score := (score_item->>'score')::integer;
+        -- Vérifier si c'est l'équipe à l'extérieur
+        ELSIF normalize_outcome_name(score_item->>'name') = normalize_outcome_name(away_team) THEN
+            away_score := (score_item->>'score')::integer;
+        END IF;
+    END LOOP;
     
     -- Calculer le résultat
-    IF first_score > second_score THEN
+    IF home_score > away_score THEN
         RETURN home_team;
-    ELSIF second_score > first_score THEN
+    ELSIF away_score > home_score THEN
         RETURN away_team;
     ELSE
         RETURN 'draw';
@@ -89,6 +102,7 @@ CREATE OR REPLACE FUNCTION normalize_outcome_name(outcome_name text)
 RETURNS text AS $$
 BEGIN
     -- Normaliser les noms d'outcomes pour la comparaison
+    -- Les outcomes ont des noms comme "Paris Saint-Germain", "Draw", "Real Madrid"
     RETURN LOWER(TRIM(outcome_name));
 END;
 $$ LANGUAGE plpgsql;
@@ -99,9 +113,13 @@ RETURNS boolean AS $$
 DECLARE
     normalized_outcome text;
     normalized_result text;
+    normalized_home_team text;
+    normalized_away_team text;
 BEGIN
     normalized_outcome := normalize_outcome_name(outcome_name);
     normalized_result := normalize_outcome_name(match_result);
+    normalized_home_team := normalize_outcome_name(home_team);
+    normalized_away_team := normalize_outcome_name(away_team);
     
     -- Vérifier les correspondances directes
     IF normalized_outcome = normalized_result THEN
@@ -113,19 +131,20 @@ BEGIN
         RETURN normalized_outcome IN ('draw', 'nul', 'match nul', 'égalité', 'tie', 'x');
     END IF;
     
-    -- Vérifier les correspondances pour les équipes
+    -- Vérifier les correspondances pour l'équipe à domicile
     IF match_result = home_team THEN
         RETURN normalized_outcome IN (
-            normalize_outcome_name(home_team),
+            normalized_home_team,
             '1', 'home', 'domicile', 'local'
-        );
+        ) OR normalized_outcome LIKE '%' || normalized_home_team || '%';
     END IF;
     
+    -- Vérifier les correspondances pour l'équipe à l'extérieur
     IF match_result = away_team THEN
         RETURN normalized_outcome IN (
-            normalize_outcome_name(away_team),
+            normalized_away_team,
             '2', 'away', 'extérieur', 'visiteur'
-        );
+        ) OR normalized_outcome LIKE '%' || normalized_away_team || '%';
     END IF;
     
     RETURN false;
@@ -140,7 +159,7 @@ DECLARE
     updated_scores jsonb;
     score_period jsonb;
     outcome_results jsonb := '[]'::jsonb;
-    outcome jsonb;
+    outcome_var jsonb;
     outcome_result jsonb;
 BEGIN
     -- Vérifier si les scores ont été mis à jour
@@ -168,17 +187,17 @@ BEGIN
         
         -- Calculer les résultats des outcomes seulement s'ils existent
         IF NEW.outcomes IS NOT NULL THEN
-            FOR outcome IN SELECT * FROM jsonb_array_elements(NEW.outcomes)
+            FOR outcome_var IN SELECT * FROM jsonb_array_elements(NEW.outcomes)
             LOOP
                 outcome_result := jsonb_build_object(
-                    'outcome_id', outcome->>'id',
-                    'type', outcome->>'type',
-                    'name', outcome->>'name',
+                    'outcome_id', outcome_var->>'id',
+                    'type', outcome_var->>'type',
+                    'name', outcome_var->>'name',
                     'result', CASE 
-                        WHEN (outcome->>'type') = 'h2h' THEN
+                        WHEN (outcome_var->>'type') = 'h2h' THEN
                             CASE 
                                 WHEN outcome_matches_result(
-                                    outcome->>'name', 
+                                    outcome_var->>'name', 
                                     match_result, 
                                     NEW.home_team, 
                                     NEW.away_team
@@ -186,8 +205,8 @@ BEGIN
                                 ELSE 'wrong'
                             END
                         -- Ajouter d'autres types d'outcomes si nécessaire
-                        -- WHEN (outcome->>'type') = 'totals' THEN ...
-                        -- WHEN (outcome->>'type') = 'spreads' THEN ...
+                        -- WHEN (outcome_var->>'type') = 'totals' THEN ...
+                        -- WHEN (outcome_var->>'type') = 'spreads' THEN ...
                         ELSE 'initial'
                     END
                 );
@@ -204,11 +223,184 @@ BEGIN
         
         -- Mettre à jour les scores avec les résultats des outcomes
         NEW.scores := updated_scores;
+        
+        -- Mettre à jour les outcomes des tips qui contiennent ce match
+        UPDATE tips 
+        SET selected_outcomes = (
+            SELECT jsonb_agg(
+                CASE 
+                    WHEN (outcome_elem->'match'->>'match_id') = NEW.match_id THEN
+                        jsonb_set(
+                            outcome_elem,
+                            '{result}',
+                            to_jsonb(
+                                CASE 
+                                    WHEN (outcome_elem->>'type') = 'h2h' THEN
+                                        CASE 
+                                            WHEN outcome_matches_result(
+                                                outcome_elem->>'name', 
+                                                match_result, 
+                                                NEW.home_team, 
+                                                NEW.away_team
+                                            ) THEN 'right'
+                                            ELSE 'wrong'
+                                        END
+                                    ELSE 'initial'
+                                END
+                            )
+                        )
+                    ELSE outcome_elem
+                END
+            )
+            FROM jsonb_array_elements(selected_outcomes) AS outcome_elem
+        )
+        WHERE selected_outcomes @> jsonb_build_array(
+            jsonb_build_object('match', jsonb_build_object('match_id', NEW.match_id))
+        );
+        
+        -- Mettre à jour aussi tous les tips existants qui ont des outcomes "initial" pour ce match
+        UPDATE tips 
+        SET selected_outcomes = (
+            SELECT jsonb_agg(
+                CASE 
+                    WHEN (outcome_elem->'match'->>'match_id') = NEW.match_id 
+                    AND (outcome_elem->>'result') = 'initial' THEN
+                        jsonb_set(
+                            outcome_elem,
+                            '{result}',
+                            to_jsonb(
+                                CASE 
+                                    WHEN (outcome_elem->>'type') = 'h2h' THEN
+                                        CASE 
+                                            WHEN outcome_matches_result(
+                                                outcome_elem->>'name', 
+                                                match_result, 
+                                                NEW.home_team, 
+                                                NEW.away_team
+                                            ) THEN 'right'
+                                            ELSE 'wrong'
+                                        END
+                                    ELSE 'initial'
+                                END
+                            )
+                        )
+                    ELSE outcome_elem
+                END
+            )
+            FROM jsonb_array_elements(selected_outcomes) AS outcome_elem
+        ),
+        result = (
+            -- Calculer le résultat global du tip
+            CASE 
+                -- Si au moins un outcome est perdu, le tip est perdu
+                WHEN (
+                    SELECT bool_or((outcome_elem->>'result') = 'wrong')
+                    FROM jsonb_array_elements(selected_outcomes) AS outcome_elem
+                ) THEN 'lost'::tip_result
+                -- Si tous les outcomes sont gagnés, le tip est gagné
+                WHEN (
+                    SELECT bool_and(
+                        CASE 
+                            WHEN (outcome_elem->>'result') = 'initial' THEN false
+                            ELSE (outcome_elem->>'result') = 'right'
+                        END
+                    )
+                    FROM jsonb_array_elements(selected_outcomes) AS outcome_elem
+                ) THEN 'won'::tip_result
+                -- Sinon, le tip reste initial
+                ELSE 'initial'::tip_result
+            END
+        )::tip_result
+        WHERE selected_outcomes @> jsonb_build_array(
+            jsonb_build_object('match', jsonb_build_object('match_id', NEW.match_id))
+        );
     END IF;
     
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+
+-- Fonction pour forcer la mise à jour des tips existants
+CREATE OR REPLACE FUNCTION force_update_tip_outcomes()
+RETURNS void AS $$
+DECLARE
+    match_record RECORD;
+    match_result TEXT;
+BEGIN
+    -- Parcourir tous les matches qui ont des scores
+    FOR match_record IN 
+        SELECT match_id, home_team, away_team, scores
+        FROM matches 
+        WHERE scores IS NOT NULL 
+        AND scores != 'null'::jsonb
+        AND scores != '{}'::jsonb
+    LOOP
+        -- Calculer le résultat du match
+        match_result := calculate_match_result(match_record.scores, match_record.home_team, match_record.away_team);
+        
+        -- Mettre à jour tous les tips qui ont des outcomes "initial" pour ce match
+        UPDATE tips 
+        SET selected_outcomes = (
+            SELECT jsonb_agg(
+                CASE 
+                    WHEN (outcome_elem->'match'->>'match_id') = match_record.match_id 
+                    AND (outcome_elem->>'result') = 'initial' THEN
+                        jsonb_set(
+                            outcome_elem,
+                            '{result}',
+                            to_jsonb(
+                                CASE 
+                                    WHEN (outcome_elem->>'type') = 'h2h' THEN
+                                        CASE 
+                                            WHEN outcome_matches_result(
+                                                outcome_elem->>'name', 
+                                                match_result, 
+                                                match_record.home_team, 
+                                                match_record.away_team
+                                            ) THEN 'right'
+                                            ELSE 'wrong'
+                                        END
+                                    ELSE 'initial'
+                                END
+                            )
+                        )
+                    ELSE outcome_elem
+                END
+            )
+            FROM jsonb_array_elements(selected_outcomes) AS outcome_elem
+        ),
+        result = (
+            -- Calculer le résultat global du tip
+            CASE 
+                -- Si au moins un outcome est perdu, le tip est perdu
+                WHEN (
+                    SELECT bool_or((outcome_elem->>'result') = 'wrong')
+                    FROM jsonb_array_elements(selected_outcomes) AS outcome_elem
+                ) THEN 'lost'::tip_result
+                -- Si tous les outcomes sont gagnés, le tip est gagné
+                WHEN (
+                    SELECT bool_and(
+                        CASE 
+                            WHEN (outcome_elem->>'result') = 'initial' THEN false
+                            ELSE (outcome_elem->>'result') = 'right'
+                        END
+                    )
+                    FROM jsonb_array_elements(selected_outcomes) AS outcome_elem
+                ) THEN 'won'::tip_result
+                -- Sinon, le tip reste initial
+                ELSE 'initial'::tip_result
+            END
+        )::tip_result
+        WHERE selected_outcomes @> jsonb_build_array(
+            jsonb_build_object('match', jsonb_build_object('match_id', match_record.match_id))
+        );
+    END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Exécuter la fonction pour corriger les tips existants
+SELECT force_update_tip_outcomes();
 
 -- Créer le trigger qui se déclenche avant la mise à jour
 DROP TRIGGER IF EXISTS trigger_update_match_outcomes ON matches;

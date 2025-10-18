@@ -32,12 +32,12 @@ export class StatsService {
 
       const winRate = this.calculateWinRate(checkedTips);
       const roi = this.calculateROI(checkedTips);
-      const points = await this.calculatePoints(tipsterId, checkedTips); // Utiliser tous les tips pour les points
+      const points = await this.calculatePoints(tipsterId, tips); // Utiliser tous les tips pour les points
 
       return {
         win_rate: winRate,
         roi: roi,
-        tips_count: checkedTips.length,
+        tips_count: tips.length,
         odd_average: this.calculateOddAverage(checkedTips),
         active_tips_count: notCheckedTips.length,
         total_tips_count: tips.length,
@@ -132,13 +132,21 @@ export class StatsService {
         // On soustrait toujours la mise (coût du tip) dès la création
         let tipResult = -tip.amount;
 
+        // Vérifier si le tip est complètement vérifié (plus d'outcomes "initial")
+        const isFullyChecked = tip.selected_outcomes.every(
+          (outcome: Outcome) => outcome.result !== OutcomeResult.Initial
+        );
+
+        if (tip.id === "8bb30441-f332-4024-a103-3736a016477b") {
+          console.log("isFullyChecked", tip.selected_outcomes);
+        }
         // Vérifier si le tip est gagné (tous les outcomes sont "right")
         const isWon = tip.selected_outcomes.every(
           (outcome: Outcome) => outcome.result === OutcomeResult.Right
         );
 
         // Seulement pour les tips vérifiés ET gagnés, on ajoute les gains
-        if (isWon) {
+        if (isFullyChecked && isWon) {
           // Si gagné, on ajoute les gains (montant * cote)
           tipResult += tip.amount * tip.price;
         }
