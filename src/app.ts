@@ -22,13 +22,14 @@ app.use(express.json());
 
 // Routes
 app.use("/api/matches", matchRoutes);
-app.use("/api/tips", authMiddleware, tipRoutes);
+// app.use("/api/tips", authMiddleware, tipRoutes);
+app.use("/api/tips", tipRoutes);
 app.use("/api/odds", oddsApiRoutes);
 app.use("/api/profiles", profileRoutes);
 app.use("/api/sports", sportRoutes);
-app.use("/api/admin", authMiddleware, adminRoutes);
+app.use("/api/admin", adminRoutes);
 app.use("/api/admin/scripts", authMiddleware, jobRoutes);
-app.use("/api/cron", jobRoutes);
+app.use("/api/cron", authMiddleware, jobRoutes);
 
 // Documentation Swagger
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));

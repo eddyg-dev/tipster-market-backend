@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node dist/server.js",
     "dev": "nodemon src/server.ts",
+    "dev:mobile": "nodemon src/server.ts",
     "build": "tsc",
     "update-odds": "ts-node scripts/update-odds.ts",
     "update-sports": "ts-node scripts/update-sports.ts",

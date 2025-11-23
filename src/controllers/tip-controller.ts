@@ -18,6 +18,8 @@ export class TipController {
       return;
     }
 
+    console.log("🔍 Données reçues:", req.body);
+    console.log("🔍 User:", req.user);
     const tipsterId = req.user?.id;
     if (!tipsterId) {
       res.status(401).json({ error: "Utilisateur non authentifié" });
