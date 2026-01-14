@@ -94,18 +94,39 @@ export class TipController {
   static async getTip(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
 
-    const { data: tip, error: tipError } = await supabase
-      .from("tips")
-      .select("*")
-      .eq("id", id)
-      .single();
+    try {
+      const { data: tip, error: tipError } = await supabase
+        .from("tips")
+        .select("*")
+        .eq("id", id)
+        .single();
 
-    if (tipError) {
-      res.status(500).json({ error: tipError.message });
-      return;
+      if (tipError) {
+        res.status(500).json({ error: tipError.message });
+        return;
+      }
+
+      // Enrichir le tip avec les données du tipster
+      const { data: tipsterData, error: tipsterError } = await supabase
+        .from("profiles")
+        .select("id, username, avatar_url")
+        .eq("id", tip.tipster_id)
+        .single();
+
+      if (!tipsterError && tipsterData) {
+        const enrichedTip = {
+          ...tip,
+          tipster: tipsterData,
+        };
+        res.status(200).json(enrichedTip);
+        return;
+      }
+
+      res.status(200).json(tip);
+    } catch (error) {
+      console.error("Erreur lors de la récupération du tip:", error);
+      res.status(500).json({ error: "Erreur interne du serveur" });
     }
-
-    res.status(200).json(tip);
   }
 
   static async getTipsByTipsterId(req: Request, res: Response): Promise<void> {
