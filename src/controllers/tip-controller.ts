@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { supabase } from "../config/supabase";
+import { StatsService } from "../services/stats.service";
 import { TipService } from "../services/tip.service";
 import { TipResult } from "../shared-data/enums/tip-result.enum";
 
@@ -18,8 +19,6 @@ export class TipController {
       return;
     }
 
-    console.log("🔍 Données reçues:", req.body);
-    console.log("🔍 User:", req.user);
     const tipsterId = req.user?.id;
     if (!tipsterId) {
       res.status(401).json({ error: "Utilisateur non authentifié" });
@@ -29,6 +28,24 @@ export class TipController {
     const { selectedOutcomes, amount, price, analysis } = req.body;
 
     try {
+      // Calculer les stats actuelles du tipster (stateless - calculées à la volée)
+      const stats = await StatsService.calculateTipsterStats(tipsterId);
+      const currentPoints = stats.points;
+
+      console.log(`💰 Points actuels du tipster ${tipsterId}: ${currentPoints}`);
+      console.log(`🎲 Montant du tip: ${amount}`);
+
+      // Vérifier si l'utilisateur a assez de points
+      if (currentPoints < amount) {
+        res.status(400).json({
+          error: "Points insuffisants",
+          message: `Vous avez ${currentPoints} points mais vous essayez d'en miser ${amount}`,
+          currentPoints,
+          requestedAmount: amount,
+        });
+        return;
+      }
+
       const deadline = TipService.calculateTipDeadline(selectedOutcomes);
       const { data, error } = await supabase.from("tips").insert({
         tipster_id: tipsterId,
@@ -58,7 +75,7 @@ export class TipController {
       const { data: tipsData, error: tipsError } = await supabase
         .from("tips")
         .select("*")
-        .order("created_at", { ascending: true });
+        .order("created_at", { ascending: false });
 
       if (tipsError) {
         res.status(500).json({ error: tipsError.message });
@@ -135,7 +152,7 @@ export class TipController {
       .from("tips")
       .select("*")
       .eq("tipster_id", tipsterId)
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: false });
 
     if (tipsError) {
       res.status(500).json({ error: tipsError.message });

@@ -26,6 +26,7 @@ create table profiles (
   profile_introduction_completed boolean default false,
   avatar_url text,
   subscription_level subscription_level,
+  is_admin boolean default false,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -54,6 +55,16 @@ create table tips (
   deadline timestamp with time zone not null,
   result tip_result default 'initial' not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Create actus table
+create table actus (
+  id uuid default uuid_generate_v4() primary key,
+  title text not null,
+  content text not null,
+  image_url text not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
 -- Create sports table

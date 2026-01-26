@@ -3,6 +3,7 @@ import express from "express";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger";
 import { authMiddleware } from "./middleware/auth.middleware";
+import actuRoutes from "./routes/actu-routes";
 import adminRoutes from "./routes/admin/admin-routes";
 import jobRoutes from "./routes/admin/job-routes";
 import matchRoutes from "./routes/match-routes";
@@ -22,12 +23,12 @@ app.use(express.json());
 
 // Routes
 app.use("/api/matches", matchRoutes);
-// app.use("/api/tips", authMiddleware, tipRoutes);
-app.use("/api/tips", tipRoutes);
-app.use("/api/odds", oddsApiRoutes);
-app.use("/api/profiles", profileRoutes);
-app.use("/api/sports", sportRoutes);
-app.use("/api/admin", adminRoutes);
+app.use("/api/tips", authMiddleware, tipRoutes);
+app.use("/api/odds", authMiddleware, oddsApiRoutes);
+app.use("/api/profiles", authMiddleware, profileRoutes);
+app.use("/api/sports", authMiddleware, sportRoutes);
+app.use("/api/admin", authMiddleware, adminRoutes);
+app.use("/api/actus", authMiddleware, actuRoutes);
 app.use("/api/admin/scripts", authMiddleware, jobRoutes);
 app.use("/api/cron", authMiddleware, jobRoutes);
 
