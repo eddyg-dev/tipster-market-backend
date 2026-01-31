@@ -1,40 +1,22 @@
 import { Request, Response } from "express";
-import moment from "moment";
 import { supabase } from "../config/supabase";
 import { ActuResponse } from "../shared-data/models/actu-response.model";
 import { ScoreResponse } from "../shared-data/models/odds-api-response/score-response.model";
 
 export class AdminController {
-  /**
-   * Récupère tous les matches depuis Supabase
-   */
-  static async getAllMatchesWithoutScores(
-    req: Request,
-    res: Response
-  ): Promise<void> {
+
+  static async cancelMatch(req: Request, res: Response): Promise<void> {
     try {
-      // Récupérer les matches qui ont commencé dans le passé (avant maintenant)
-      const now = moment().toISOString();
-
-      const { data: matches, error: matchesError } = await supabase
-        .from("matches")
-        .select("*")
-        // .lt("commence_time", now)
-        .order("commence_time", { ascending: true });
-
-      const matchesWithoutScores =
-        matches?.filter((match) => match.scores === null) || [];
-
-      if (matchesError) throw matchesError;
-
-      res.json(matchesWithoutScores);
-      return;
+      const { id } = req.body;
+      const { data, error } = await supabase.from("matches").update({ is_cancelled: true }).eq("id", id);
+      if (error) throw error;
+      res.json({ success: true, message: "Match annulé avec succès" });
     } catch (error) {
-      console.error("Erreur lors de la récupération des matches:", error);
+      console.error("Erreur lors de l'annulation du match:", error);
       res.status(500).json({ error: "Erreur serveur" });
-      return;
     }
   }
+
 
   /**
    * Met à jour plusieurs matchs avec leurs scores respectifs
@@ -122,6 +104,28 @@ export class AdminController {
       if (error) throw error;
       res.json(data);
     } catch (error) {
+      res.status(500).json({ error: "Erreur serveur" });
+    }
+  }
+
+  static async getUsers(req: Request, res: Response): Promise<void> {
+    try {
+      const { data, error } = await supabase.from("profiles").select("*");
+      if (error) throw error;
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ error: "Erreur serveur" });
+    }
+  }
+
+  static async deleteUser(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { data, error } = await supabase.from("profiles").delete().eq("id", id);
+      if (error) throw error;
+      res.json({ success: true, message: "Utilisateur supprimé avec succès" });
+    } catch (error) {
+      console.error("Erreur lors de la suppression de l'utilisateur:", error);
       res.status(500).json({ error: "Erreur serveur" });
     }
   }

@@ -157,10 +157,7 @@ export class ProfileController {
           accept_terms: acceptTerms,
           avatar_url: avatarUrl,
           profile_introduction_completed: true,
-          subscription_level:
-            profileType === ProfileType.TIPSTER
-              ? SubscriptionLevel.TIPSTER
-              : SubscriptionLevel.FREE,
+          subscription_level: SubscriptionLevel.FREE,
           email: email,
         },
         {
@@ -190,6 +187,18 @@ export class ProfileController {
       res.status(200).json(data?.map((item) => item.username) as string[]);
     } catch (error) {
       console.error("Erreur lors de la récupération des pseudos:", error);
+      res.status(500).json({ error: "Erreur interne du serveur" });
+    }
+  }
+
+  static async deleteMyProfile(req: Request, res: Response): Promise<void> {
+    const userId = req.params.id;
+    try {
+      const { data, error } = await supabase.from("profiles").delete().eq("id", userId);
+      if (error) throw error;
+      res.json({ success: true, message: "Profil supprimé avec succès" });
+    } catch (error) {
+      console.error("Erreur lors de la suppression du profil:", error);
       res.status(500).json({ error: "Erreur interne du serveur" });
     }
   }

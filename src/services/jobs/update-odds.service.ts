@@ -1,4 +1,4 @@
-import { supabase } from "../../config/supabase";
+import { supabaseAdmin } from "../../config/supabase-admin";
 import { Market } from "../../shared-data/enums/market.enum";
 import { Region } from "../../shared-data/enums/region.enum";
 import { MatchUtils } from "../../utils/match.utils";
@@ -41,7 +41,7 @@ export class UpdateOddsService {
         const dbStartTime = Date.now();
 
         // Insérer ou mettre à jour les matchs
-        const { error: upsertError } = await supabase
+        const { error: upsertError } = await supabaseAdmin
           .from("matches")
           .upsert(matches, {
             onConflict: "match_id",

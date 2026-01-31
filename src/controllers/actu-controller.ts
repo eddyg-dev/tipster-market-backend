@@ -31,4 +31,16 @@ export class ActuController {
     }
   }
 
+  static async getActuById(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { data: actu, error: actuError } = await supabase.from("actus").select("*").eq("id", id).single();
+      if (actuError) throw actuError;
+      res.json(actu);
+    } catch (error) {
+      console.error("Erreur lors de la récupération de l'actu:", error);
+      res.status(500).json({ error: "Erreur serveur" });
+    }
+  }
+
 }

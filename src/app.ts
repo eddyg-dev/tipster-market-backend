@@ -12,6 +12,7 @@ import profileRoutes from "./routes/profile-routes";
 import sportRoutes from "./routes/sport-routes";
 import subscriptionRoutes from "./routes/subscription-routes";
 import tipRoutes from "./routes/tip-routes";
+import versionRoutes from "./routes/version-routes";
 
 const app = express();
 
@@ -21,7 +22,10 @@ app.use(cors());
 app.use("/api/subscription", subscriptionRoutes);
 app.use(express.json());
 
-// Routes
+// Routes publiques
+app.use("/api/version", versionRoutes); // Route publique (pas d'auth)
+
+// Routes protégées
 app.use("/api/matches", matchRoutes);
 app.use("/api/tips", authMiddleware, tipRoutes);
 app.use("/api/odds", authMiddleware, oddsApiRoutes);

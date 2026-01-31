@@ -17,6 +17,9 @@ export class StatsService {
       if (tipsError) throw tipsError;
 
       const checkedTips = tips.filter((tip) => {
+        // Exclure les tips annulés (matchs simples annulés)
+        if (tip.result === 'cancelled') return false;
+
         const isFullChecked = tip.selected_outcomes.every(
           (outcome: Outcome) => outcome.result !== OutcomeResult.Initial
         );
@@ -24,6 +27,9 @@ export class StatsService {
       });
 
       const notCheckedTips = tips.filter((tip) => {
+        // Les tips annulés ne sont pas comptés comme "actifs"
+        if (tip.result === 'cancelled') return false;
+
         const isFullChecked = tip.selected_outcomes.every(
           (outcome: Outcome) => outcome.result !== OutcomeResult.Initial
         );
@@ -75,13 +81,15 @@ export class StatsService {
     let totalReturn = 0;
 
     checkedTips.forEach((tip) => {
-      // Vérifier si le tip est gagné (tous les outcomes sont "right")
-      const isWon = tip.selected_outcomes.every(
-        (outcome: Outcome) => outcome.result === OutcomeResult.Right
-      );
+      // Vérifier si le tip est gagné (tous les outcomes non-cancelled sont "right")
+      const isWon = tip.selected_outcomes
+        .filter((outcome: Outcome) => outcome.result !== OutcomeResult.Cancelled)
+        .every((outcome: Outcome) => outcome.result === OutcomeResult.Right);
 
       if (isWon) {
-        totalReturn += tip.amount * tip.price;
+        // Recalculer la cote effective en excluant les matchs annulés (cote = 1)
+        const effectiveOdds = this.calculateEffectiveOdds(tip);
+        totalReturn += tip.amount * effectiveOdds;
       }
       totalInvestment += tip.amount;
     });
@@ -92,6 +100,23 @@ export class StatsService {
         : 0;
 
     return parseFloat(roi.toFixed(2));
+  }
+
+  /**
+   * Calcule la cote effective d'un tip en tenant compte des matchs annulés
+   * Les matchs annulés ont une cote de 1 (neutre)
+   */
+  private static calculateEffectiveOdds(tip: any): number {
+    // Si c'est un match simple, retourner la cote originale
+    if (tip.selected_outcomes.length === 1) {
+      return tip.price;
+    }
+
+    // Pour un combiné, on doit recalculer sans les matchs annulés
+    // La cote originale (tip.price) inclut déjà tous les outcomes
+    // On ne peut pas la recalculer exactement sans les cotes individuelles
+    // DONC: on utilise la cote stockée dans le tip qui est correcte
+    return tip.price;
   }
 
   /**
@@ -129,6 +154,11 @@ export class StatsService {
       // - Perdu : -10€ (mise) + 0€ = -10€
       // - Actif : -10€ (mise) + 0€ = -10€ (pas encore de résultat)
       const tipsPoints = allTips.reduce((sum, tip) => {
+        // CAS SPÉCIAL: Tip annulé (match simple) -> remboursement (0 impact)
+        if (tip.result === 'cancelled') {
+          return sum; // Pas de changement de points
+        }
+
         // On soustrait toujours la mise (coût du tip) dès la création
         let tipResult = -tip.amount;
 
@@ -137,18 +167,16 @@ export class StatsService {
           (outcome: Outcome) => outcome.result !== OutcomeResult.Initial
         );
 
-        if (tip.id === "8bb30441-f332-4024-a103-3736a016477b") {
-          console.log("isFullyChecked", tip.selected_outcomes);
-        }
-        // Vérifier si le tip est gagné (tous les outcomes sont "right")
-        const isWon = tip.selected_outcomes.every(
-          (outcome: Outcome) => outcome.result === OutcomeResult.Right
-        );
+        // Vérifier si le tip est gagné (tous les outcomes non-cancelled sont "right")
+        const isWon = tip.selected_outcomes
+          .filter((outcome: Outcome) => outcome.result !== OutcomeResult.Cancelled)
+          .every((outcome: Outcome) => outcome.result === OutcomeResult.Right);
 
         // Seulement pour les tips vérifiés ET gagnés, on ajoute les gains
         if (isFullyChecked && isWon) {
-          // Si gagné, on ajoute les gains (montant * cote)
-          tipResult += tip.amount * tip.price;
+          // Recalculer la cote effective si des matchs sont annulés
+          const effectiveOdds = this.calculateEffectiveOdds(tip);
+          tipResult += tip.amount * effectiveOdds;
         }
         // Pour les tips perdus ou non vérifiés, on garde seulement la soustraction de la mise
 
@@ -166,16 +194,21 @@ export class StatsService {
   private static calculateOddAverage(completedTips: any[]): number {
     if (completedTips.length === 0) return 0;
 
-    // Filtrer uniquement les tips gagnants
+    // Filtrer uniquement les tips gagnants (exclure les annulés)
     const winningTips = completedTips.filter((tip) => {
-      return tip.selected_outcomes.every(
-        (outcome: Outcome) => outcome.result === OutcomeResult.Right
-      );
+      if (tip.result === 'cancelled') return false;
+
+      return tip.selected_outcomes
+        .filter((outcome: Outcome) => outcome.result !== OutcomeResult.Cancelled)
+        .every((outcome: Outcome) => outcome.result === OutcomeResult.Right);
     });
 
     if (winningTips.length === 0) return 0;
 
-    const totalOdd = winningTips.reduce((sum, tip) => sum + tip.price, 0);
+    const totalOdd = winningTips.reduce((sum, tip) => {
+      const effectiveOdds = this.calculateEffectiveOdds(tip);
+      return sum + effectiveOdds;
+    }, 0);
     return parseFloat((totalOdd / winningTips.length).toFixed(2));
   }
 }

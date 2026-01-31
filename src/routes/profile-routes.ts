@@ -7,5 +7,6 @@ router.get("/tipsters", ProfileController.getTipsters);
 router.get("/pseudos", ProfileController.getAllPseudos);
 router.post("/:id/introduction", ProfileController.saveProfileIntroduction);
 router.get("/:id", ProfileController.getProfileById);
+router.delete("/:id", ProfileController.deleteMyProfile);
 
 export default router;

@@ -5,5 +5,5 @@ const router = express.Router();
 
 router.get("/", ActuController.getAllActus);
 
-
+router.get("/:id", ActuController.getActuById);
 export default router;

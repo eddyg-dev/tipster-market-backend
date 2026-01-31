@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { supabase } from "../../config/supabase";
+import { supabaseAdmin } from "../../config/supabase-admin";
 import { OddsApiService } from "../odds-api.service";
 
 dotenv.config();
@@ -7,17 +7,22 @@ dotenv.config();
 export class UpdateSportsService {
   static async execute() {
     try {
-      const sportsResponse = await OddsApiService.getSports();
+      console.log('🏆 Récupération des sports depuis Odds-API...');
+      console.log('🔑 Utilisation de supabaseAdmin (service_role)');
 
-      const { error } = await supabase.from("sports").upsert(sportsResponse, {
+      const sportsResponse = await OddsApiService.getSports();
+      console.log(`📊 ${sportsResponse.length} sports récupérés`);
+
+      const { error } = await supabaseAdmin.from("sports").upsert(sportsResponse, {
         onConflict: "key",
       });
 
       if (error) {
-        console.error("Erreur insertion sports:", error);
-      } else {
-        console.log(`${sportsResponse.length} sports traités avec succès`);
+        console.error("❌ Erreur insertion sports:", error);
+        throw error;
       }
+
+      console.log(`✅ ${sportsResponse.length} sports traités avec succès`);
       return {
         success: true,
         message: `${sportsResponse.length} sports mis à jour`,
