@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { supabase } from '../config/supabase';
+import { supabaseAdmin } from '../config/supabase-admin';
 
 /**
  * Contrôleur pour la gestion des versions de l'application
@@ -21,7 +21,7 @@ export class VersionController {
       }
 
       // Récupérer la version minimale depuis la BDD
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('app_version')
         .select('min_version')
         .single();

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { supabase } from "../config/supabase";
+import { supabaseAdmin } from "../config/supabase-admin";
 
 /**
  * Contrôleur pour la gestion des actu
@@ -14,7 +14,7 @@ export class ActuController {
    */
   static async getAllActus(req: Request, res: Response) {
     try {
-      const { data: actus, error: actuError } = await supabase
+      const { data: actus, error: actuError } = await supabaseAdmin
         .from("actus")
         .select(
           `
@@ -34,7 +34,7 @@ export class ActuController {
   static async getActuById(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const { data: actu, error: actuError } = await supabase.from("actus").select("*").eq("id", id).single();
+      const { data: actu, error: actuError } = await supabaseAdmin.from("actus").select("*").eq("id", id).single();
       if (actuError) throw actuError;
       res.json(actu);
     } catch (error) {

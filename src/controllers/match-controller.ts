@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import moment from "moment";
-import { supabase } from "../config/supabase";
+import { supabaseAdmin } from "../config/supabase-admin";
 
 /**
  * Contrôleur pour la gestion des matches
@@ -21,7 +21,7 @@ export class MatchController {
 
       // Requête optimisée avec JOIN pour récupérer les matches et leurs sports en une seule requête
       // Utilise la clé étrangère fk_matches_sport_key définie dans init.sql
-      const { data: matches, error: matchesError } = await supabase
+      const { data: matches, error: matchesError } = await supabaseAdmin
         .from("matches")
         .select(
           `
@@ -51,7 +51,7 @@ export class MatchController {
 
       // Requête optimisée avec JOIN pour récupérer le match et son sport en une seule requête
       // Utilise la clé étrangère fk_matches_sport_key définie dans init.sql
-      const { data: match, error: matchError } = await supabase
+      const { data: match, error: matchError } = await supabaseAdmin
         .from("matches")
         .select(
           `

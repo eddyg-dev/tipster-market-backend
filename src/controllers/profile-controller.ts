@@ -1,6 +1,6 @@
 import { User } from "@supabase/supabase-js";
 import { Request, Response } from "express";
-import { supabase } from "../config/supabase";
+import { supabaseAdmin } from "../config/supabase-admin";
 import { StatsService } from "../services/stats.service";
 import { ProfileType } from "../shared-data/enums/profile-type.enum";
 import { SubscriptionLevel } from "../shared-data/enums/subscription-level.enum";
@@ -10,7 +10,7 @@ import { Tipster } from "../shared-data/models/tipster.model";
 export class ProfileController {
   static async getProfiles(req: Request, res: Response): Promise<void> {
     try {
-      const { data, error } = await supabase.from("profiles").select("*");
+      const { data, error } = await supabaseAdmin.from("profiles").select("*");
 
       if (error) {
         res.status(500).json({ error: error.message });
@@ -27,7 +27,7 @@ export class ProfileController {
    */
   static async getTipsters(req: Request, res: Response): Promise<void> {
     try {
-      const { data: tipsters, error } = await supabase
+      const { data: tipsters, error } = await supabaseAdmin
         .from("profiles")
         .select("id, username, avatar_url, created_at, updated_at")
         .eq("profile_type", "tipster")
@@ -59,7 +59,7 @@ export class ProfileController {
     const { id } = req.params;
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from("profiles")
         .select("*")
         .eq("id", id)
@@ -96,7 +96,7 @@ export class ProfileController {
     const { id } = req.params;
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from("profiles")
         .select("*")
         .eq("id", id)
@@ -147,8 +147,16 @@ export class ProfileController {
       req.body;
     const userId = req.params.id;
 
+    // Seul l'utilisateur authentifié peut mettre à jour son propre profil
+    if (req.user?.id !== userId) {
+      res.status(403).json({ error: "Non autorisé à modifier ce profil" });
+      return;
+    }
+
     try {
-      const { data, error } = await supabase.from("profiles").upsert(
+      // supabaseAdmin (service_role) contourne RLS : permet INSERT si le profil
+      // n'existe pas encore (trigger manqué) ou UPDATE pour compléter l'intro
+      const { data, error } = await supabaseAdmin.from("profiles").upsert(
         {
           id: userId,
           username: username,
@@ -158,7 +166,7 @@ export class ProfileController {
           avatar_url: avatarUrl,
           profile_introduction_completed: true,
           subscription_level: SubscriptionLevel.FREE,
-          email: email,
+          email: email ?? undefined,
         },
         {
           onConflict: "id",
@@ -180,7 +188,7 @@ export class ProfileController {
 
   static async getAllPseudos(req: Request, res: Response): Promise<void> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from("profiles")
         .select("username")
         .eq("profile_type", "tipster");
@@ -193,8 +201,12 @@ export class ProfileController {
 
   static async deleteMyProfile(req: Request, res: Response): Promise<void> {
     const userId = req.params.id;
+    if (req.user?.id !== userId) {
+      res.status(403).json({ error: "Non autorisé à supprimer ce profil" });
+      return;
+    }
     try {
-      const { data, error } = await supabase.from("profiles").delete().eq("id", userId);
+      const { data, error } = await supabaseAdmin.from("profiles").delete().eq("id", userId);
       if (error) throw error;
       res.json({ success: true, message: "Profil supprimé avec succès" });
     } catch (error) {

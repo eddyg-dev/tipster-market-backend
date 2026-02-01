@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { supabase } from "../config/supabase";
+import { supabaseAdmin } from "../config/supabase-admin";
 import { StatsService } from "../services/stats.service";
 import { TipService } from "../services/tip.service";
 import { TipResult } from "../shared-data/enums/tip-result.enum";
@@ -47,7 +47,7 @@ export class TipController {
       }
 
       const deadline = TipService.calculateTipDeadline(selectedOutcomes);
-      const { data, error } = await supabase.from("tips").insert({
+      const { data, error } = await supabaseAdmin.from("tips").insert({
         tipster_id: tipsterId,
         selected_outcomes: selectedOutcomes,
         amount,
@@ -72,7 +72,7 @@ export class TipController {
 
   static async getTips(req: Request, res: Response): Promise<void> {
     try {
-      const { data: tipsData, error: tipsError } = await supabase
+      const { data: tipsData, error: tipsError } = await supabaseAdmin
         .from("tips")
         .select("*")
         .order("created_at", { ascending: false });
@@ -84,7 +84,7 @@ export class TipController {
 
       const enrichedTips = await Promise.all(
         tipsData.map(async (tip) => {
-          const { data: tipsterData, error: tipsterError } = await supabase
+          const { data: tipsterData, error: tipsterError } = await supabaseAdmin
             .from("profiles")
             .select("id, username, avatar_url")
             .eq("id", tip.tipster_id)
@@ -112,7 +112,7 @@ export class TipController {
     const { id } = req.params;
 
     try {
-      const { data: tip, error: tipError } = await supabase
+      const { data: tip, error: tipError } = await supabaseAdmin
         .from("tips")
         .select("*")
         .eq("id", id)
@@ -124,7 +124,7 @@ export class TipController {
       }
 
       // Enrichir le tip avec les données du tipster
-      const { data: tipsterData, error: tipsterError } = await supabase
+      const { data: tipsterData, error: tipsterError } = await supabaseAdmin
         .from("profiles")
         .select("id, username, avatar_url")
         .eq("id", tip.tipster_id)
@@ -148,7 +148,7 @@ export class TipController {
 
   static async getTipsByTipsterId(req: Request, res: Response): Promise<void> {
     const { tipsterId } = req.params;
-    const { data: tipsData, error: tipsError } = await supabase
+    const { data: tipsData, error: tipsError } = await supabaseAdmin
       .from("tips")
       .select("*")
       .eq("tipster_id", tipsterId)

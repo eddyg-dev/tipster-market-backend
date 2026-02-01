@@ -1,5 +1,5 @@
 import moment from "moment";
-import { supabase } from "../config/supabase";
+import { supabaseAdmin } from "../config/supabase-admin";
 import { Outcome, OutcomeResult, TipsterStats } from "../shared-data";
 
 export class StatsService {
@@ -9,7 +9,7 @@ export class StatsService {
   static async calculateTipsterStats(tipsterId: string): Promise<TipsterStats> {
     try {
       // Récupérer tous les tips du tipster
-      const { data: tips, error: tipsError } = await supabase
+      const { data: tips, error: tipsError } = await supabaseAdmin
         .from("tips")
         .select("*")
         .eq("tipster_id", tipsterId);
@@ -131,7 +131,7 @@ export class StatsService {
   ): Promise<number> {
     try {
       // Récupérer la date de création du tipster
-      const { data: tipster, error: tipsterError } = await supabase
+      const { data: tipster, error: tipsterError } = await supabaseAdmin
         .from("profiles")
         .select("created_at")
         .eq("id", tipsterId)

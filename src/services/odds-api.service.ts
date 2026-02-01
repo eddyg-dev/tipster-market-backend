@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { supabase } from "../config/supabase";
+import { supabaseAdmin } from "../config/supabase-admin";
 import { Market } from "../shared-data/enums/market.enum";
 import { Region } from "../shared-data/enums/region.enum";
 import { MatchResponse } from "../shared-data/models/odds-api-response/match-response.model";
@@ -94,7 +94,7 @@ export class OddsApiService {
       throw new Error("SPORTS_KEYS is not defined in environment variables");
     }
     console.log("Sports à traiter:", sportKeys);
-    const { data: sports, error: sportsError } = await supabase
+    const { data: sports, error: sportsError } = await supabaseAdmin
       .from("sports")
       .select("*")
       .in("key", sportKeys);

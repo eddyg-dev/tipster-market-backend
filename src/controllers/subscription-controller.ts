@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import Stripe from "stripe";
-import { supabase } from "../config/supabase";
+import { supabaseAdmin } from "../config/supabase-admin";
 import { SubscriptionLevel } from "../shared-data/enums/subscription-level.enum";
 
 function parseStripeStatusToSubscriptionLevel(
@@ -42,7 +42,7 @@ export class SubscriptionController {
         const userId = session.metadata?.user_id;
         if (userId) {
           console.log(`Mise à jour abonnement user ${userId} -> premium`);
-          await supabase
+          await supabaseAdmin
             .from("profiles")
             .update({ subscription_level: SubscriptionLevel.PREMIUM })
             .eq("id", userId);
@@ -61,7 +61,7 @@ export class SubscriptionController {
           console.log(
             `Mise à jour abonnement user ${userId} -> ${newLevel} (status Stripe: ${subscription.status})`
           );
-          await supabase
+          await supabaseAdmin
             .from("profiles")
             .update({ subscription_level: newLevel })
             .eq("id", userId);
@@ -78,7 +78,7 @@ export class SubscriptionController {
             subscription.status
           );
           console.log(`Abonnement supprimé pour user ${userId} -> ${newLevel}`);
-          await supabase
+          await supabaseAdmin
             .from("profiles")
             .update({ subscription_level: newLevel })
             .eq("id", userId);

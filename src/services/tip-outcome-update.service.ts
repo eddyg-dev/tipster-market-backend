@@ -1,4 +1,4 @@
-import { supabase } from "../config/supabase";
+import { supabaseAdmin } from "../config/supabase-admin";
 import { OutcomeResult } from "../shared-data/enums/outcome-result.enum";
 
 export class TipOutcomeUpdateService {
@@ -11,7 +11,7 @@ export class TipOutcomeUpdateService {
       console.log(`🔄 Mise à jour des tips pour le match ${matchId}...`);
 
       // 1. Récupérer le match avec ses outcome_results
-      const { data: match, error: matchError } = await supabase
+      const { data: match, error: matchError } = await supabaseAdmin
         .from("matches")
         .select("scores")
         .eq("match_id", matchId)
@@ -25,7 +25,7 @@ export class TipOutcomeUpdateService {
       }
 
       // 2. Récupérer tous les tips et filtrer côté application
-      const { data: allTips, error: tipsError } = await supabase
+      const { data: allTips, error: tipsError } = await supabaseAdmin
         .from("tips")
         .select("id, selected_outcomes");
 
@@ -82,7 +82,7 @@ export class TipOutcomeUpdateService {
 
       // 4. Mettre à jour chaque tip individuellement
       for (const updatedTip of updatedTips) {
-        const { error: updateError } = await supabase
+        const { error: updateError } = await supabaseAdmin
           .from("tips")
           .update({ selected_outcomes: updatedTip.selected_outcomes })
           .eq("id", updatedTip.id);
@@ -131,7 +131,7 @@ export class TipOutcomeUpdateService {
       console.log("🔄 Recherche des tips avec des outcomes non mis à jour...");
 
       // Récupérer tous les tips et filtrer côté application
-      const { data: allTips, error: tipsError } = await supabase
+      const { data: allTips, error: tipsError } = await supabaseAdmin
         .from("tips")
         .select("id, selected_outcomes");
 

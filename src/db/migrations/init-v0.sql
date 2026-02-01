@@ -74,11 +74,9 @@ CREATE POLICY "profiles_select_policy" ON profiles
   TO authenticated
   USING (true);
 
--- Insertion : Géré par Supabase Auth (service_role)
-CREATE POLICY "profiles_no_insert" ON profiles
-  FOR INSERT
-  TO authenticated
-  WITH CHECK (false);
+-- Insertion : Pas de policy restrictive, RLS bloque par défaut
+-- Les insertions se font uniquement via le trigger handle_new_user() (SECURITY DEFINER)
+-- ou via service_role qui contourne RLS
 
 -- Modification : Uniquement son propre profil
 CREATE POLICY "profiles_update_own" ON profiles
@@ -117,10 +115,10 @@ COMMENT ON TABLE sports IS 'Sports disponibles sur la plateforme';
 -- Activer RLS
 ALTER TABLE sports ENABLE ROW LEVEL SECURITY;
 
--- Policy : Lecture pour utilisateurs connectés uniquement
+-- Policy : Lecture publique (anon + authenticated)
 CREATE POLICY "sports_select_policy" ON sports
   FOR SELECT
-  TO authenticated
+  TO public
   USING (true);
 
 -- Bloquer toute modification pour les utilisateurs
@@ -351,13 +349,14 @@ CREATE TABLE app_version (
 
 ALTER TABLE app_version ENABLE ROW LEVEL SECURITY;
 
--- Lecture : Public (même anon pour check version au démarrage)
-CREATE POLICY "app_version_select_public" ON app_version
+-- Lecture pour utilisateurs connectés uniquement
+CREATE POLICY "app_version_select_policy" ON app_version
   FOR SELECT
-  TO public
+  TO authenticated
   USING (true);
 
--- Modification : Bloquée (géré par admins)
+-- Bloquer toute modification pour les utilisateurs
+-- (service_role contourne RLS automatiquement)
 CREATE POLICY "app_version_no_insert" ON app_version
   FOR INSERT
   TO authenticated
@@ -420,6 +419,8 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
+  -- Insérer le profil (la fonction SECURITY DEFINER s'exécute avec les droits du propriétaire)
+  -- Le propriétaire est postgres (superuser) qui contourne RLS
   INSERT INTO public.profiles (
     id, 
     username,
@@ -435,10 +436,15 @@ BEGIN
     'free'
   );
   RETURN NEW;
+EXCEPTION
+  WHEN OTHERS THEN
+    -- Log l'erreur mais ne bloque pas l'inscription
+    RAISE WARNING 'Erreur lors de la création du profil: %', SQLERRM;
+    RETURN NEW;
 END;
 $$;
 
-COMMENT ON FUNCTION handle_new_user() IS 'Crée automatiquement un profil user lors de l''inscription';
+COMMENT ON FUNCTION handle_new_user() IS 'Crée automatiquement un profil user lors de l''inscription (contourne RLS avec SECURITY DEFINER)';
 
 -- Fonction pour normaliser les noms
 CREATE OR REPLACE FUNCTION normalize_outcome_name(outcome_name text)
@@ -846,12 +852,12 @@ BEGIN
   RAISE NOTICE '🔒 Sécurité (RLS):';
   RAISE NOTICE '   - Toutes les tables: RLS activé ✅';
   RAISE NOTICE '   - profiles: lecture publique, modification own';
-  RAISE NOTICE '   - sports: lecture authenticated, admin write';
+  RAISE NOTICE '   - sports: lecture publique (anon + authenticated), admin write';
   RAISE NOTICE '   - matches: lecture authenticated, admin write';
   RAISE NOTICE '   - tips: lecture publique, tipsters create/own';
   RAISE NOTICE '   - actus: lecture authenticated, admin write';
   RAISE NOTICE '   - subscription_levels: lecture authenticated';
-  RAISE NOTICE '   - app_version: lecture public (anon + authenticated)';
+  RAISE NOTICE '   - app_version: lecture authenticated, admin write';
   RAISE NOTICE '';
   RAISE NOTICE '⚠️  Les sports doivent être ajoutés via l''API (update-sports)';
   RAISE NOTICE '   👉 npm run update-sports';

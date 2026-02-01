@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
-import { supabase } from "../config/supabase";
+import { supabaseAdmin } from "../config/supabase-admin";
 import { SportResponse } from "../shared-data/models/odds-api-response/sport-response.model";
 
 export class SportController {
   static async getAllSports(req: Request, res: Response) {
     try {
-      const { data: sports, error: sportsError } = await supabase
+      const { data: sports, error: sportsError } = await supabaseAdmin
         .from("sports")
         .select("*")
         .order("priority", { ascending: false });
@@ -27,7 +27,7 @@ export class SportController {
   static async getSportById(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const { data: sport, error: sportError } = await supabase
+      const { data: sport, error: sportError } = await supabaseAdmin
         .from("sports")
         .select("*")
         .eq("key", id)

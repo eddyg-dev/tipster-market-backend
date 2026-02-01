@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { supabase } from "../config/supabase";
+import { supabaseAdmin } from "../config/supabase-admin";
 import { ActuResponse } from "../shared-data/models/actu-response.model";
 import { ScoreResponse } from "../shared-data/models/odds-api-response/score-response.model";
 
@@ -8,7 +9,7 @@ export class AdminController {
   static async cancelMatch(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.body;
-      const { data, error } = await supabase.from("matches").update({ is_cancelled: true }).eq("id", id);
+      const { data, error } = await supabaseAdmin.from("matches").update({ is_cancelled: true }).eq("id", id);
       if (error) throw error;
       res.json({ success: true, message: "Match annulé avec succès" });
     } catch (error) {
@@ -86,7 +87,7 @@ export class AdminController {
   static async createActu(req: Request, res: Response): Promise<ActuResponse> {
     try {
       const { title, content, image } = req.body;
-      const { data, error } = await supabase.from("actus").insert({ title, content, image }).select().single();
+      const { data, error } = await supabaseAdmin.from("actus").insert({ title, content, image }).select().single();
       if (error) throw error;
       return data as ActuResponse;
     } catch (error) {
@@ -100,7 +101,7 @@ export class AdminController {
   static async deleteActu(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const { data, error } = await supabase.from("actus").delete().eq("id", id);
+      const { data, error } = await supabaseAdmin.from("actus").delete().eq("id", id);
       if (error) throw error;
       res.json(data);
     } catch (error) {
@@ -110,7 +111,7 @@ export class AdminController {
 
   static async getUsers(req: Request, res: Response): Promise<void> {
     try {
-      const { data, error } = await supabase.from("profiles").select("*");
+      const { data, error } = await supabaseAdmin.from("profiles").select("*");
       if (error) throw error;
       res.json(data);
     } catch (error) {
@@ -121,7 +122,7 @@ export class AdminController {
   static async deleteUser(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const { data, error } = await supabase.from("profiles").delete().eq("id", id);
+      const { data, error } = await supabaseAdmin.from("profiles").delete().eq("id", id);
       if (error) throw error;
       res.json({ success: true, message: "Utilisateur supprimé avec succès" });
     } catch (error) {
