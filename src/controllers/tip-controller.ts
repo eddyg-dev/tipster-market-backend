@@ -32,9 +32,6 @@ export class TipController {
       const stats = await StatsService.calculateTipsterStats(tipsterId);
       const currentPoints = stats.points;
 
-      console.log(`💰 Points actuels du tipster ${tipsterId}: ${currentPoints}`);
-      console.log(`🎲 Montant du tip: ${amount}`);
-
       // Vérifier si l'utilisateur a assez de points
       if (currentPoints < amount) {
         res.status(400).json({

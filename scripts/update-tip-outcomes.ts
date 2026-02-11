@@ -14,24 +14,14 @@ import { TipOutcomeUpdateService } from "../src/services/tip-outcome-update.serv
 dotenv.config();
 
 async function main() {
-  console.log("🚀 Démarrage de la mise à jour des outcomes des tips...");
-
   try {
-    // Mettre à jour tous les tips en attente
     await TipOutcomeUpdateService.updateAllPendingTips();
-
-    console.log("✅ Mise à jour des outcomes des tips terminée avec succès");
     process.exit(0);
   } catch (error) {
-    console.error(
-      "❌ Erreur lors de la mise à jour des outcomes des tips:",
-      error instanceof Error ? error.message : "Erreur inconnue"
-    );
     process.exit(1);
   }
 }
 
-// Lance le script
 main();
 
 

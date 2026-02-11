@@ -10,7 +10,6 @@ import matchRoutes from "./routes/match-routes";
 import oddsApiRoutes from "./routes/odds-api-routes";
 import profileRoutes from "./routes/profile-routes";
 import sportRoutes from "./routes/sport-routes";
-import subscriptionRoutes from "./routes/subscription-routes";
 import tipRoutes from "./routes/tip-routes";
 import versionRoutes from "./routes/version-routes";
 
@@ -19,7 +18,6 @@ const app = express();
 // Middleware
 app.use(cors());
 // Route Stripe AVANT express.json()
-app.use("/api/subscription", subscriptionRoutes);
 app.use(express.json());
 
 // Routes publiques
