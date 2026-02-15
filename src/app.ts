@@ -6,6 +6,7 @@ import { authMiddleware } from "./middleware/auth.middleware";
 import actuRoutes from "./routes/actu-routes";
 import adminRoutes from "./routes/admin/admin-routes";
 import jobRoutes from "./routes/admin/job-routes";
+import healthRoutes from "./routes/health-routes";
 import matchRoutes from "./routes/match-routes";
 import oddsApiRoutes from "./routes/odds-api-routes";
 import profileRoutes from "./routes/profile-routes";
@@ -21,6 +22,7 @@ app.use(cors());
 app.use(express.json());
 
 // Routes publiques
+app.use("/health", healthRoutes); // Health check pour monitoring (UptimeRobot, etc.)
 app.use("/api/version", versionRoutes); // Route publique (pas d'auth)
 
 // Routes protégées
