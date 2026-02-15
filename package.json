@@ -10,7 +10,8 @@
     "build": "tsc",
     "update-odds": "ts-node scripts/update-odds.ts",
     "update-sports": "ts-node scripts/update-sports.ts",
-    "update-tip-outcomes": "ts-node scripts/update-tip-outcomes.ts"
+    "update-tip-outcomes": "ts-node scripts/update-tip-outcomes.ts",
+    "debug-match-update": "ts-node scripts/debug-match-update.ts"
   },
   "keywords": [],
   "author": "",

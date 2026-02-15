@@ -42,7 +42,7 @@ export class AdminController {
 
       // Mettre à jour chaque match individuellement
       for (const update of matchUpdates) {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseAdmin
           .from("matches")
           .update({ scores: update.scores })
           .eq("id", update.match_id);

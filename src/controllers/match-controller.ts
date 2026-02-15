@@ -29,7 +29,7 @@ export class MatchController {
           sport:sports!sport_key(*)
         `
         )
-        .gte("commence_time", now.toISOString())
+        // .gte("commence_time", now.toISOString())
         .lte("commence_time", endOfDayIn7Days.toISOString())
         .order("commence_time", { ascending: true });
 
