@@ -141,7 +141,7 @@ export class StatsService {
 
       // Calculer les points de base (20 points par jour depuis le 01/08/2025)
       // Peu importe la date d'inscription du tipster
-      const startDate = moment.utc("2025-09-01");
+      const startDate = moment.utc(process.env.REFERENCE_DATE);
       const today = moment.utc();
 
       const daysSinceStart = today.diff(startDate, "days");
