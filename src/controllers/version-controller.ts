@@ -38,7 +38,8 @@ export class VersionController {
       // Comparer les versions majeures
       const currentMajor = parseInt(currentVersion.split('.')[0]);
       const minMajor = parseInt(data.min_version.split('.')[0]);
-      const forceUpdate = currentMajor !== minMajor;
+      const forceUpdateIsActive = process.env.FORCE_UPDATE === 'true';
+      const forceUpdate = forceUpdateIsActive && currentMajor !== minMajor;
 
       res.status(200).json({
         min_version: data.min_version,
