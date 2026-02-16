@@ -43,7 +43,7 @@ export class VersionController {
 
       res.status(200).json({
         min_version: data.min_version,
-        forceUpdate,
+        forceUpdate: false,
       });
     } catch (error) {
       console.error('❌ Erreur inattendue:', error);
