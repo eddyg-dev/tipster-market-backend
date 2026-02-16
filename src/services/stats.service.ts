@@ -41,10 +41,10 @@ export class StatsService {
       const points = await this.calculatePoints(tipsterId, tips); // Utiliser tous les tips pour les points
 
       return {
-        win_rate: winRate,
-        roi: roi,
+        win_rate: parseFloat(winRate.toFixed(1)),
+        roi: parseFloat(roi.toFixed(1)),
         tips_count: tips.length,
-        odd_average: this.calculateOddAverage(checkedTips),
+        odd_average: parseFloat(this.calculateOddAverage(checkedTips).toFixed(2)),
         active_tips_count: notCheckedTips.length,
         total_tips_count: tips.length,
         points: points,
