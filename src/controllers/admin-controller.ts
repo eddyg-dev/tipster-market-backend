@@ -6,6 +6,68 @@ import { ScoreResponse } from "../shared-data/models/odds-api-response/score-res
 
 export class AdminController {
 
+  /**
+   * Récupère uniquement les matchs qui sont présents dans des tips
+   * Utile pour l'admin qui veut mettre à jour les scores des matchs actifs
+   */
+  static async getMatchesWithTips(req: Request, res: Response): Promise<void> {
+    try {
+      // 1. Récupérer tous les tips pour extraire les IDs de matchs
+      const { data: tips, error: tipsError } = await supabaseAdmin
+        .from("tips")
+        .select("selected_outcomes");
+
+      if (tipsError) {
+        console.error("❌ Erreur lors de la récupération des tips:", tipsError);
+        throw tipsError;
+      }
+
+      // 2. Extraire tous les IDs de matchs uniques depuis selected_outcomes (JSONB)
+      const matchIds = new Set<string>();
+      tips?.forEach((tip: any) => {
+        if (tip.selected_outcomes && Array.isArray(tip.selected_outcomes)) {
+          tip.selected_outcomes.forEach((outcome: any) => {
+            if (outcome.match?.id) {
+              matchIds.add(outcome.match.id);
+            }
+          });
+        }
+      });
+
+      const uniqueMatchIds = Array.from(matchIds);
+      console.log(`📊 ${uniqueMatchIds.length} matchs uniques trouvés dans les tips`);
+
+      // 3. Récupérer les matchs correspondants avec leurs sports
+      if (uniqueMatchIds.length === 0) {
+        res.json([]);
+        return;
+      }
+
+      const { data: matches, error: matchesError } = await supabaseAdmin
+        .from("matches")
+        .select(`
+          *,
+          sport:sports!sport_key(*)
+        `)
+        .in("id", uniqueMatchIds)
+        .order("commence_time", { ascending: true });
+
+      if (matchesError) {
+        console.error("❌ Erreur lors de la récupération des matchs:", matchesError);
+        throw matchesError;
+      }
+
+      console.log(`✅ ${matches?.length || 0} matchs avec tips récupérés`);
+      res.json(matches || []);
+    } catch (error) {
+      console.error("❌ Erreur lors de la récupération des matchs avec tips:", error);
+      res.status(500).json({ 
+        error: "Erreur serveur",
+        details: error instanceof Error ? error.message : JSON.stringify(error)
+      });
+    }
+  }
+
   static async cancelMatch(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.body;

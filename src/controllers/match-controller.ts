@@ -10,17 +10,17 @@ import { supabaseAdmin } from "../config/supabase-admin";
 
 export class MatchController {
   /**
-   * Récupère tous les matches depuis Supabase avec leurs sports associés
+   * Récupère les matches de la semaine à venir avec leurs sports associés
    * Utilise un JOIN optimisé pour éviter les requêtes N+1
    */
   static async getAllMatches(req: Request, res: Response) {
     try {
       // Calculer les dates pour la semaine à venir avec Moment
-      const now = moment(); // À partir de maintenant
+      const now = moment();
       const endOfDayIn7Days = moment().add(7, "days").endOf("day");
 
       // Requête optimisée avec JOIN pour récupérer les matches et leurs sports en une seule requête
-      // Utilise la clé étrangère fk_matches_sport_key définie dans init.sql
+      // Filtre sur les 7 prochains jours uniquement
       const { data: matches, error: matchesError } = await supabaseAdmin
         .from("matches")
         .select(
