@@ -1,6 +1,7 @@
 import { User } from "@supabase/supabase-js";
 import { Request, Response } from "express";
 import { supabaseAdmin } from "../config/supabase-admin";
+import { getFollowersCountMap } from "../services/favorite.service";
 import { StatsService } from "../services/stats.service";
 import { ProfileType } from "../shared-data/enums/profile-type.enum";
 import { SubscriptionLevel } from "../shared-data/enums/subscription-level.enum";
@@ -38,13 +39,16 @@ export class ProfileController {
         return;
       }
 
-      // Ajouter les statistiques pour chaque tipster
+      const tipsterIds = tipsters.map((t) => t.id);
+      const followersMap = await getFollowersCountMap(tipsterIds);
+
       const tipstersWithStats = await Promise.all(
         tipsters.map(async (tipster) => {
           const stats = await StatsService.calculateTipsterStats(tipster.id);
           return {
             ...tipster,
-            stats: stats,
+            stats,
+            followers_count: followersMap[tipster.id] ?? 0,
           };
         })
       );
@@ -59,24 +63,51 @@ export class ProfileController {
     const { id } = req.params;
 
     try {
-      const { data, error } = await supabaseAdmin
+      let result = await supabaseAdmin
         .from("profiles")
         .select("*")
         .eq("id", id)
         .single();
 
-      if (error) {
+      let { data, error } = result;
+
+      // Profil absent mais requête authentifiée pour ce même id → créer un profil minimal (rattrapage trigger)
+      if (error && req.user?.id === id && req.user?.email) {
+        const username =
+          "user_" + id.replace(/-/g, "").slice(0, 12) + "_" + Date.now().toString(36);
+        const { error: insertError } = await supabaseAdmin.from("profiles").insert({
+          id,
+          username,
+          email: req.user.email,
+          profile_type: ProfileType.USER,
+          subscription_level: SubscriptionLevel.FREE,
+        });
+        if (!insertError) {
+          result = await supabaseAdmin
+            .from("profiles")
+            .select("*")
+            .eq("id", id)
+            .single();
+          data = result.data;
+          error = result.error;
+        }
+      }
+
+      if (error || !data) {
         res.status(404).json({ error: "Profil non trouvé" });
         return;
       }
       const profileType = data?.profile_type;
 
       if (profileType === ProfileType.TIPSTER) {
-        // Ajouter les statistiques pour les tipsters
-        const stats = await StatsService.calculateTipsterStats(id);
+        const [stats, followersMap] = await Promise.all([
+          StatsService.calculateTipsterStats(id),
+          getFollowersCountMap([id]),
+        ]);
         const tipsterWithStats = {
           ...data,
-          stats: stats,
+          stats,
+          followers_count: followersMap[id] ?? 0,
         };
         res.status(200).json(tipsterWithStats as Tipster);
         return;
@@ -113,11 +144,14 @@ export class ProfileController {
         return;
       }
 
-      // Ajouter les statistiques
-      const stats = await StatsService.calculateTipsterStats(id);
+      const [stats, followersMap] = await Promise.all([
+        StatsService.calculateTipsterStats(id),
+        getFollowersCountMap([id]),
+      ]);
       const tipsterWithStats = {
         ...data,
-        stats: stats,
+        stats,
+        followers_count: followersMap[id] ?? 0,
       };
 
       res.status(200).json(tipsterWithStats);
@@ -143,9 +177,17 @@ export class ProfileController {
       return;
     }
 
-    const { username, birthDate, profileType, acceptTerms, avatarUrl, email } =
+    const { username, birthDate, profileType, acceptTerms, avatarUrl, email, heardFrom, heardFromOther } =
       req.body;
     const userId = req.params.id;
+
+    // Si "Autre" est sélectionné, on enregistre "Autre" + le texte libre s'il y en a un
+    const heardFromValue =
+      heardFrom === "Autre"
+        ? typeof heardFromOther === "string" && heardFromOther.trim()
+          ? `Autre - ${heardFromOther.trim()}`
+          : "Autre"
+        : heardFrom ?? null;
 
     // Seul l'utilisateur authentifié peut mettre à jour son propre profil
     if (req.user?.id !== userId) {
@@ -167,6 +209,7 @@ export class ProfileController {
           profile_introduction_completed: true,
           subscription_level: SubscriptionLevel.FREE,
           email: email ?? undefined,
+          heard_from: heardFromValue,
         },
         {
           onConflict: "id",

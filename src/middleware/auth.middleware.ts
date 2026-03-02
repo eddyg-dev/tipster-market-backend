@@ -51,3 +51,34 @@ export const authMiddleware = async (
     res.status(500).json({ error: "Erreur d'authentification" });
   }
 };
+
+/**
+ * Middleware d'auth optionnel : attache req.user si un Bearer token valide est présent,
+ * sinon laisse passer sans erreur (pour les routes qui peuvent être appelées avec ou sans auth).
+ */
+export const optionalAuthMiddleware = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      next();
+      return;
+    }
+    const token = authHeader.substring(7);
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(token);
+    if (error || !user) {
+      next();
+      return;
+    }
+    req.user = { id: user.id, email: user.email || "" };
+    next();
+  } catch {
+    next();
+  }
+};

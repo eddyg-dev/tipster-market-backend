@@ -211,4 +211,194 @@ export class StatsService {
     }, 0);
     return parseFloat((totalOdd / winningTips.length).toFixed(2));
   }
+
+  /**
+   * Indique si un tip est entièrement vérifié et gagné (hors annulés)
+   */
+  private static isTipWon(tip: any): boolean {
+    if (tip.result === "cancelled") return false;
+    const isFullyChecked = tip.selected_outcomes?.every(
+      (o: Outcome) => o.result !== OutcomeResult.Initial
+    );
+    if (!isFullyChecked) return false;
+    return tip.selected_outcomes
+      .filter((o: Outcome) => o.result !== OutcomeResult.Cancelled)
+      .every((o: Outcome) => o.result === OutcomeResult.Right);
+  }
+
+  /**
+   * Points remportés par un tip (uniquement si gagné ; sinon 0)
+   */
+  private static getTipPointsWon(tip: any): number {
+    if (!this.isTipWon(tip)) return 0;
+    const effectiveOdds = this.calculateEffectiveOdds(tip);
+    return Math.round(tip.amount * effectiveOdds - tip.amount);
+  }
+
+  /**
+   * Meilleure cote réussie : parmi tous les tips gagnés, celui avec la cote effective la plus haute.
+   * (Si des octés gagnés existent, ce sera souvent un octé.)
+   */
+  static async getBestOdd(): Promise<{
+    tip: any;
+    tipster: { id: string; username: string; avatar_url: string } | null;
+  } | null> {
+    try {
+      const { data: tips, error } = await supabaseAdmin
+        .from("tips")
+        .select("*");
+
+      if (error) throw error;
+
+      const wonTips = (tips ?? []).filter((t) => this.isTipWon(t));
+      if (wonTips.length === 0) return null;
+
+      const best = wonTips.reduce((acc, t) => {
+        const odds = this.calculateEffectiveOdds(t);
+        return odds > this.calculateEffectiveOdds(acc) ? t : acc;
+      }, wonTips[0]);
+
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("id, username, avatar_url")
+        .eq("id", best.tipster_id)
+        .single();
+
+      return {
+        tip: best,
+        tipster: profile ? { id: profile.id, username: profile.username, avatar_url: (profile.avatar_url ?? "") as string } : null,
+      };
+    } catch (err) {
+      console.error("Erreur getBestOdd:", err);
+      return null;
+    }
+  }
+
+  private static readonly FUEGO_LAST_N_TIPS = 10;
+
+  /**
+   * Tipster en feu : celui qui a le plus de succès sur ses 10 derniers pronos terminés (non en cours).
+   * En cas d'égalité, le premier trouvé est renvoyé.
+   */
+  static async getTipsterFuego(): Promise<{
+    tipster: { id: string; username: string; avatar_url: string } | null;
+    consecutiveSuccessesCount: number;
+    checkedTipsCount: number;
+  } | null> {
+    try {
+      const { data: tips, error } = await supabaseAdmin
+        .from("tips")
+        .select("*");
+
+      if (error) throw error;
+      const allTips = tips ?? [];
+
+      // Ne comptabiliser que les pronos terminés : exclure les tips en cours
+      // (au moins un outcome encore "initial") et les annulés.
+      const isTipFinished = (t: any): boolean => {
+        if (t.result === "cancelled") return false;
+        return t.selected_outcomes?.every(
+          (o: Outcome) => o.result !== OutcomeResult.Initial
+        ) ?? false;
+      };
+
+      const finishedTips = allTips.filter(isTipFinished);
+
+      // Grouper par tipster_id, trier les tips de chaque tipster par created_at desc
+      const byTipster = new Map<string, any[]>();
+      for (const tip of finishedTips) {
+        const id = tip.tipster_id;
+        if (!id) continue;
+        if (!byTipster.has(id)) byTipster.set(id, []);
+        byTipster.get(id)!.push(tip);
+      }
+
+      for (const arr of byTipster.values()) {
+        arr.sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+      }
+
+      // Pour chaque tipster : prendre les 10 derniers pronos, compter les succès
+      let maxSuccesses = 0;
+      let bestTipsterId: string | null = null;
+      let bestCheckedCount = 0;
+
+      for (const [tipsterId, tipList] of byTipster.entries()) {
+        const lastN = tipList.slice(0, this.FUEGO_LAST_N_TIPS);
+        const wins = lastN.filter((t) => this.isTipWon(t)).length;
+        if (wins > maxSuccesses) {
+          maxSuccesses = wins;
+          bestTipsterId = tipsterId;
+          bestCheckedCount = lastN.length;
+        }
+      }
+
+      if (maxSuccesses === 0 || !bestTipsterId) return null;
+
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("id, username, avatar_url")
+        .eq("id", bestTipsterId)
+        .single();
+
+      return {
+        tipster: profile
+          ? {
+              id: profile.id,
+              username: profile.username,
+              avatar_url: (profile.avatar_url ?? "") as string,
+            }
+          : null,
+        consecutiveSuccessesCount: maxSuccesses,
+        checkedTipsCount: bestCheckedCount,
+      };
+    } catch (err) {
+      console.error("Erreur getTipsterFuego:", err);
+      return null;
+    }
+  }
+
+  /**
+   * Tip qui a remporté le plus de points (gain le plus élevé pour un tip gagné).
+   */
+  static async getTipWithMostPoints(): Promise<{
+    tip: any;
+    tipster: { id: string; username: string; avatar_url: string } | null;
+    pointsWon: number;
+  } | null> {
+    try {
+      const { data: tips, error } = await supabaseAdmin
+        .from("tips")
+        .select("*");
+
+      if (error) throw error;
+
+      const withPoints = (tips ?? [])
+        .filter((t) => this.isTipWon(t))
+        .map((t) => ({ tip: t, pointsWon: this.getTipPointsWon(t) }));
+
+      if (withPoints.length === 0) return null;
+
+      const best = withPoints.reduce((acc, x) =>
+        x.pointsWon > acc.pointsWon ? x : acc
+      );
+
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("id, username, avatar_url")
+        .eq("id", best.tip.tipster_id)
+        .single();
+
+      return {
+        tip: best.tip,
+        tipster: profile ? { id: profile.id, username: profile.username, avatar_url: (profile.avatar_url ?? "") as string } : null,
+        pointsWon: best.pointsWon,
+      };
+    } catch (err) {
+      console.error("Erreur getTipWithMostPoints:", err);
+      return null;
+    }
+  }
 }

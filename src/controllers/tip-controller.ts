@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { supabaseAdmin } from "../config/supabase-admin";
+import { getFollowersCountMap } from "../services/favorite.service";
 import { StatsService } from "../services/stats.service";
 import { TipService } from "../services/tip.service";
 import { TipResult } from "../shared-data/enums/tip-result.enum";
@@ -79,6 +80,9 @@ export class TipController {
         return;
       }
 
+      const tipsterIds = [...new Set(tipsData.map((t) => t.tipster_id).filter(Boolean))];
+      const followersMap = await getFollowersCountMap(tipsterIds);
+
       const enrichedTips = await Promise.all(
         tipsData.map(async (tip) => {
           const { data: tipsterData, error: tipsterError } = await supabaseAdmin
@@ -90,7 +94,10 @@ export class TipController {
           if (!tipsterError && tipsterData) {
             return {
               ...tip,
-              tipster: tipsterData,
+              tipster: {
+                ...tipsterData,
+                followers_count: followersMap[tip.tipster_id] ?? 0,
+              },
             };
           }
 
@@ -120,17 +127,19 @@ export class TipController {
         return;
       }
 
-      // Enrichir le tip avec les données du tipster
-      const { data: tipsterData, error: tipsterError } = await supabaseAdmin
-        .from("profiles")
-        .select("id, username, avatar_url")
-        .eq("id", tip.tipster_id)
-        .single();
+      const [tipsterResult, followersMap] = await Promise.all([
+        supabaseAdmin.from("profiles").select("id, username, avatar_url").eq("id", tip.tipster_id).single(),
+        getFollowersCountMap(tip.tipster_id ? [tip.tipster_id] : []),
+      ]);
+      const { data: tipsterData, error: tipsterError } = tipsterResult;
 
       if (!tipsterError && tipsterData) {
         const enrichedTip = {
           ...tip,
-          tipster: tipsterData,
+          tipster: {
+            ...tipsterData,
+            followers_count: followersMap[tip.tipster_id] ?? 0,
+          },
         };
         res.status(200).json(enrichedTip);
         return;

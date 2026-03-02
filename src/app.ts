@@ -2,7 +2,6 @@ import cors from "cors";
 import express from "express";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger";
-import { authMiddleware } from "./middleware/auth.middleware";
 import actuRoutes from "./routes/actu-routes";
 import adminRoutes from "./routes/admin/admin-routes";
 import jobRoutes from "./routes/admin/job-routes";
@@ -11,6 +10,7 @@ import matchRoutes from "./routes/match-routes";
 import oddsApiRoutes from "./routes/odds-api-routes";
 import profileRoutes from "./routes/profile-routes";
 import sportRoutes from "./routes/sport-routes";
+import statRoutes from "./routes/stat-routes";
 import tipRoutes from "./routes/tip-routes";
 import versionRoutes from "./routes/version-routes";
 
@@ -27,14 +27,15 @@ app.use("/api/version", versionRoutes); // Route publique (pas d'auth)
 
 // Routes protégées
 app.use("/api/matches", matchRoutes);
-app.use("/api/tips", authMiddleware, tipRoutes);
-app.use("/api/odds", authMiddleware, oddsApiRoutes);
-app.use("/api/profiles", authMiddleware, profileRoutes);
-app.use("/api/sports", authMiddleware, sportRoutes);
-app.use("/api/admin", authMiddleware, adminRoutes);
-app.use("/api/actus", authMiddleware, actuRoutes);
-app.use("/api/admin/scripts", authMiddleware, jobRoutes);
-app.use("/api/cron", authMiddleware, jobRoutes);
+app.use("/api/tips", tipRoutes);
+app.use("/api/odds", oddsApiRoutes);
+app.use("/api/profiles", profileRoutes);
+app.use("/api/sports", sportRoutes);
+app.use("/api/stats", statRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/actus", actuRoutes);
+app.use("/api/admin/scripts", jobRoutes);
+app.use("/api/cron", jobRoutes);
 
 // Documentation Swagger
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
