@@ -265,7 +265,12 @@ export class StatsService {
         .single();
 
       return {
-        tip: best,
+        tip: {
+          id: best.id,
+          price: this.calculateEffectiveOdds(best),
+          amount: best.amount,
+          created_at: best.created_at,
+        },
         tipster: profile ? { id: profile.id, username: profile.username, avatar_url: (profile.avatar_url ?? "") as string } : null,
       };
     } catch (err) {
@@ -392,7 +397,12 @@ export class StatsService {
         .single();
 
       return {
-        tip: best.tip,
+        tip: {
+          id: best.tip.id,
+          price: this.calculateEffectiveOdds(best.tip),
+          amount: best.tip.amount,
+          created_at: best.tip.created_at,
+        },
         tipster: profile ? { id: profile.id, username: profile.username, avatar_url: (profile.avatar_url ?? "") as string } : null,
         pointsWon: best.pointsWon,
       };
