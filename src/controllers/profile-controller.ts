@@ -5,6 +5,7 @@ import { getFollowersCountMap } from "../services/favorite.service";
 import { StatsService } from "../services/stats.service";
 import { ProfileType } from "../shared-data/enums/profile-type.enum";
 import { SubscriptionLevel } from "../shared-data/enums/subscription-level.enum";
+import { Payment, PaymentPlatform } from "../shared-data/models/payment.model";
 import { Profile } from "../shared-data/models/profile.model";
 import { Tipster } from "../shared-data/models/tipster.model";
 
@@ -222,6 +223,93 @@ export class ProfileController {
       res.status(200).json(data as Profile);
     } catch (error) {
       console.error("Erreur interne lors de la mise à jour de l'abonnement:", error);
+      res.status(500).json({ error: "Erreur interne du serveur" });
+    }
+  }
+
+  /**
+   * Enregistre un paiement ou renouvellement d'abonnement (appelé par le front après .approved()).
+   * Idempotent : si (user_id, transaction_id) existe déjà, retourne 200 sans doublon.
+   */
+  static async recordPayment(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        res.status(401).json({ error: "Utilisateur non authentifié" });
+        return;
+      }
+
+      const body = req.body as {
+        transactionId?: string;
+        productId?: string;
+        platform?: string;
+        paidAt?: string;
+        subscriptionLevel?: string;
+      };
+      const { transactionId, productId, platform, paidAt, subscriptionLevel } = body;
+
+      if (!transactionId || !productId || !platform) {
+        res.status(400).json({
+          error: "Champs requis manquants: transactionId, productId, platform",
+        });
+        return;
+      }
+
+      const normalizedPlatform = String(platform).toLowerCase().replace(/\s+/g, "_");
+      const allowedPlatforms: PaymentPlatform[] = ["google_play", "apple_appstore"];
+      if (!allowedPlatforms.includes(normalizedPlatform as PaymentPlatform)) {
+        res.status(400).json({
+          error: "Plateforme invalide. Valeurs acceptées: google_play, apple_appstore",
+        });
+        return;
+      }
+
+      const level =
+        subscriptionLevel &&
+        Object.values(SubscriptionLevel).includes(subscriptionLevel as SubscriptionLevel)
+          ? (subscriptionLevel as SubscriptionLevel)
+          : SubscriptionLevel.PREMIUM;
+
+      // Parrain éventuel : dernier code parrainage utilisé par cet utilisateur (pour commission)
+      let referralTipsterId: string | null = null;
+      const { data: lastReferral } = await supabaseAdmin
+        .from("referral_usages")
+        .select("tipster_id")
+        .eq("user_id", userId)
+        .order("used_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (lastReferral?.tipster_id) referralTipsterId = lastReferral.tipster_id;
+
+      const row = {
+        user_id: userId,
+        transaction_id: transactionId,
+        product_id: productId,
+        platform: normalizedPlatform,
+        subscription_level: level,
+        paid_at: paidAt ? new Date(paidAt).toISOString() : new Date().toISOString(),
+        ...(referralTipsterId && { referral_tipster_id: referralTipsterId }),
+      };
+
+      const { data, error } = await supabaseAdmin
+        .from("payments")
+        .insert(row)
+        .select("*")
+        .single();
+
+      if (error) {
+        if (error.code === "23505") {
+          res.status(200).json({ message: "Paiement déjà enregistré" });
+          return;
+        }
+        console.error("Erreur lors de l'enregistrement du paiement:", error);
+        res.status(500).json({ error: error.message });
+        return;
+      }
+
+      res.status(201).json(data as Payment);
+    } catch (error) {
+      console.error("Erreur interne lors de l'enregistrement du paiement:", error);
       res.status(500).json({ error: "Erreur interne du serveur" });
     }
   }

@@ -27,6 +27,13 @@ router.post(
   ProfileController.updateMySubscriptionLevel
 );
 
+// Enregistrement d'un paiement / renouvellement (front après achat in-app)
+router.post(
+  "/me/payments",
+  authMiddleware,
+  ProfileController.recordPayment
+);
+
 router.post(
   "/:id/introduction",
   authMiddleware,
