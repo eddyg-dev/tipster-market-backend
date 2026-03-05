@@ -5,7 +5,10 @@ import {
   removeFavorite,
 } from "../controllers/favorite-controller";
 import { ProfileController } from "../controllers/profile-controller";
-import { authMiddleware, optionalAuthMiddleware } from "../middleware/auth.middleware";
+import {
+  authMiddleware,
+  optionalAuthMiddleware,
+} from "../middleware/auth.middleware";
 
 const router = express.Router();
 
@@ -17,7 +20,18 @@ router.get("/favorites", authMiddleware, getMyFavorites);
 router.post("/favorites", authMiddleware, addFavorite);
 router.delete("/favorites/:tipsterId", authMiddleware, removeFavorite);
 
-router.post("/:id/introduction", authMiddleware, ProfileController.saveProfileIntroduction);
+// Mise à jour du niveau d'abonnement de l'utilisateur connecté
+router.post(
+  "/me/subscription",
+  authMiddleware,
+  ProfileController.updateMySubscriptionLevel
+);
+
+router.post(
+  "/:id/introduction",
+  authMiddleware,
+  ProfileController.saveProfileIntroduction
+);
 router.get("/:id", optionalAuthMiddleware, ProfileController.getProfileById);
 router.delete("/:id", ProfileController.deleteMyProfile);
 

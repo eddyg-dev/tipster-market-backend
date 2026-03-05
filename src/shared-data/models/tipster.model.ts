@@ -8,4 +8,5 @@ export interface Tipster {
   followers_count: number;
   created_at: string;
   updated_at: string;
+  promo_code?: string;
 }

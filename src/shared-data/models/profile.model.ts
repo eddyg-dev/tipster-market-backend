@@ -12,4 +12,5 @@ export interface Profile {
   profile_introduction_completed: boolean;
   subscription_level: SubscriptionLevel;
   stats?: TipsterStats;
+  promo_code?: string;
 }

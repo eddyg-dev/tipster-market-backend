@@ -100,16 +100,24 @@ export class ProfileController {
       const profileType = data?.profile_type;
 
       if (profileType === ProfileType.TIPSTER) {
-        const [stats, followersMap] = await Promise.all([
+        const [stats, followersMap, referral] = await Promise.all([
           StatsService.calculateTipsterStats(id),
           getFollowersCountMap([id]),
+          supabaseAdmin
+            .from("referral_codes")
+            .select("code")
+            .eq("tipster_id", id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
         ]);
-        const tipsterWithStats = {
-          ...data,
+        const tipsterWithStats: Tipster = {
+          ...(data as any),
           stats,
           followers_count: followersMap[id] ?? 0,
+          promo_code: referral.data?.code ?? undefined,
         };
-        res.status(200).json(tipsterWithStats as Tipster);
+        res.status(200).json(tipsterWithStats);
         return;
       } else if (profileType === ProfileType.USER) {
         res.status(200).json(data as User);
@@ -144,19 +152,76 @@ export class ProfileController {
         return;
       }
 
-      const [stats, followersMap] = await Promise.all([
+      const [stats, followersMap, referral] = await Promise.all([
         StatsService.calculateTipsterStats(id),
         getFollowersCountMap([id]),
+        supabaseAdmin
+          .from("referral_codes")
+          .select("code")
+          .eq("tipster_id", id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
       ]);
-      const tipsterWithStats = {
-        ...data,
+      const tipsterWithStats: Tipster = {
+        ...(data as any),
         stats,
         followers_count: followersMap[id] ?? 0,
+        promo_code: referral.data?.code ?? undefined,
       };
 
       res.status(200).json(tipsterWithStats);
     } catch (error) {
       console.error("Erreur lors de la récupération du tipster:", error);
+      res.status(500).json({ error: "Erreur interne du serveur" });
+    }
+  }
+
+  /**
+   * Met à jour le niveau d'abonnement de l'utilisateur connecté.
+   * Utilisée après un achat in-app pour marquer l'utilisateur comme premium/elite côté backend.
+   */
+  static async updateMySubscriptionLevel(
+    req: Request,
+    res: Response
+  ): Promise<void> {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        res.status(401).json({ error: "Utilisateur non authentifié" });
+        return;
+      }
+
+      const { level } = req.body as { level?: SubscriptionLevel | string };
+      if (!level) {
+        res.status(400).json({ error: "Niveau d'abonnement manquant" });
+        return;
+      }
+
+      // Normaliser la valeur reçue (string → enum)
+      const normalizedLevel = String(level).toLowerCase() as SubscriptionLevel;
+      const allowedLevels = Object.values(SubscriptionLevel);
+      if (!allowedLevels.includes(normalizedLevel)) {
+        res.status(400).json({ error: "Niveau d'abonnement invalide" });
+        return;
+      }
+
+      const { data, error } = await supabaseAdmin
+        .from("profiles")
+        .update({ subscription_level: normalizedLevel })
+        .eq("id", userId)
+        .select("*")
+        .single();
+
+      if (error) {
+        console.error("Erreur lors de la mise à jour de l'abonnement:", error);
+        res.status(500).json({ error: error.message });
+        return;
+      }
+
+      res.status(200).json(data as Profile);
+    } catch (error) {
+      console.error("Erreur interne lors de la mise à jour de l'abonnement:", error);
       res.status(500).json({ error: "Erreur interne du serveur" });
     }
   }
@@ -220,6 +285,31 @@ export class ProfileController {
         console.error("Erreur Supabase:", error);
         res.status(500).json({ error: error.message });
         return;
+      }
+
+      // Si le profil est (ou devient) un tipster, générer un code promo unique basé sur le pseudo
+      if (profileType === ProfileType.TIPSTER && Array.isArray(data) && data[0]) {
+        const createdProfile = data[0] as Profile;
+        const base = (createdProfile.username || "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-zA-Z0-9]/g, "")
+          .toUpperCase()
+          .slice(0, 10);
+        const suffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const code = `${base}_${suffix}`;
+
+        try {
+          await supabaseAdmin
+            .from("referral_codes")
+            .insert({
+              code,
+              tipster_id: createdProfile.id,
+            });
+        } catch (e) {
+          // En cas de conflit (code déjà existant) ou autre, on loggue mais on ne bloque pas la création du profil
+          console.error("Erreur lors de la création du code parrainage:", e);
+        }
       }
 
       res.status(200).json(data as Profile | null);

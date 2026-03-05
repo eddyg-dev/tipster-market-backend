@@ -13,6 +13,7 @@ import sportRoutes from "./routes/sport-routes";
 import statRoutes from "./routes/stat-routes";
 import tipRoutes from "./routes/tip-routes";
 import versionRoutes from "./routes/version-routes";
+import referralRoutes from "./routes/referral-routes";
 
 const app = express();
 
@@ -36,6 +37,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/actus", actuRoutes);
 app.use("/api/admin/scripts", jobRoutes);
 app.use("/api/cron", jobRoutes);
+app.use("/api/referrals", referralRoutes);
 
 // Documentation Swagger
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));

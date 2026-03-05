@@ -89,20 +89,15 @@ export class OddsApiService {
   }
 
   static async getScores(): Promise<ScoreResponse[]> {
-    const sportKeys = process.env.SPORTS_KEYS?.split(",");
-    if (!sportKeys) {
-      throw new Error("SPORTS_KEYS is not defined in environment variables");
-    }
-    console.log("Sports à traiter:", sportKeys);
-    const { data: sports, error: sportsError } = await supabaseAdmin
+    const { data: sportsKeys, error: sportsError } = await supabaseAdmin
       .from("sports")
-      .select("*")
-      .in("key", sportKeys);
+      .select("key")
+      .in("group", ["soccer"]);
     if (sportsError) {
       throw sportsError;
     }
     const scores = [];
-    for (const sportKey of sportKeys) {
+    for (const sportKey of sportsKeys ?? []) {
       const url = `${ODDS_API_BASE_URL}/sports/${sportKey}/scores?apiKey=${ODDS_API_KEY}&dateFormat=iso&daysFrom=3`;
       const response = await fetch(url);
       if (!response.ok) {

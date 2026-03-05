@@ -35,11 +35,12 @@ export class VersionController {
         return;
       }
 
-      // Comparer les versions majeures
-      const currentMajor = parseInt(currentVersion.split('.')[0]);
-      const minMajor = parseInt(data.min_version.split('.')[0]);
+      // Comparer major et minor : si égaux, pas de mise à jour forcée (patch ignoré)
+      const [currentMajor, currentMinor] = currentVersion.split('.').map((v: string) => parseInt(v, 10) || 0);
+      const [minMajor, minMinor] = data.min_version.split('.').map((v: string) => parseInt(v, 10) || 0);
       const forceUpdateIsActive = process.env.FORCE_UPDATE === 'true';
-      const forceUpdate = forceUpdateIsActive && currentMajor !== minMajor;
+      const majorMinorMatch = currentMajor === minMajor && currentMinor === minMinor;
+      const forceUpdate = forceUpdateIsActive && !majorMinorMatch;
 
       res.status(200).json({
         min_version: data.min_version,

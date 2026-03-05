@@ -8,8 +8,9 @@ export class UpdateOddsService {
   static async execute() {
     const startTime = Date.now();
     try {
-      const sports = process.env.SPORTS_KEYS?.split(",") || [];
-      if (sports.length === 0) {
+      const sports = await OddsApiService.getSports();
+      const soccerSports = sports.filter((sport) => sport.group.toLowerCase() === "soccer");
+      if (soccerSports.length === 0) {
         return {
           success: false,
           message: "Aucun sport défini",
@@ -21,7 +22,7 @@ export class UpdateOddsService {
       );
 
       const matchesResponse = await OddsApiService.getMatchesWithOdds(
-        sports,
+        soccerSports.map((sport) => sport.key),
         [Region.EU],
         [Market.H2H]
       );
