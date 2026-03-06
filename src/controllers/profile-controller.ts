@@ -299,6 +299,15 @@ export class ProfileController {
 
       if (error) {
         if (error.code === "23505") {
+          // Violation d'unicité : distinguer "même user (idempotent)" vs "transaction déjà liée à un autre compte"
+          const msg = String(error.message || "");
+          if (msg.includes("payments_transaction_id_unique")) {
+            res.status(409).json({
+              error: "Cet abonnement est déjà lié à un autre compte Prono d'Or.",
+              code: "SUBSCRIPTION_ALREADY_LINKED",
+            });
+            return;
+          }
           res.status(200).json({ message: "Paiement déjà enregistré" });
           return;
         }
